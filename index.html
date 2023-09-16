@@ -8,8 +8,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@100;400;700&family=Noto+Sans:wght@100;400;500;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="style.css" />
     <meta charset="utf-8" />
+    <script src="Player.js"></script>
     <script src="GameState.js"></script>
     <title>AI and Games Jam 2023 Entry - COPYCAT</title>
+    <script>
+      //globals
+      let canvasReady = false;
+      // utils
+      const toggleById = (id) => document.getElementById(id).classList.toggle("hidden");
+    </script>
   </head>
   <body>
     <main></main>
@@ -18,7 +25,29 @@
       <nav id="menu">
         <button id="mainAction">Play</button>
         <button id="resetAction">Reset</button>
+        <button onclick="toggleById('credits')">Credits</button>
       </nav>
+
+      <section id="credits" class="hidden">
+        <h3>Credits</h3>
+        <ul>
+          <li>Game Design: Beardo</li>
+          <li>Art: Beardo, Kenney</li>
+          <li>Code: Beardo</li>
+          <li>Music: Beardo</li>
+          <li>Sound Effects: Beardo, Kenney</li>
+        </ul>
+        <div class="card">
+          <h4>Libraries, Assets & Resources</h4>
+          <ul>
+            <li><a href="http://p5js.org" target="_blank">P5js</a></li>
+            <li><a href="https://kenney.nl" target="_blank">Kenney Amazing Assets</a></li>
+            <li><a href="https://thecodingtrain.com/challenges/171-wave-function-collapse" target="_blank">The Coding Train - WFC</a></li>
+            <li><a href="https://www.youtube.com/@simondev758" target="_blank">@SimonDev YouTube</a></li>
+            <li><a href="https://github.com/features/copilot" target="_blank">Github CoPilot</a></li>
+           </ul> 
+        </div>
+      </section>
     </section>
     <script>
       window.gameState = new GameState();
