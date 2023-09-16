@@ -1,0 +1,40 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+canvas {
+  display: block;
+  z-index: -1;
+  position: fixed;
+  margin: auto;
+}
+
+section#ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom:0;
+  right:0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+nav > * {
+  margin-bottom: 0.5em;
+}
+
+.hidden {
+  display: none;
+}
