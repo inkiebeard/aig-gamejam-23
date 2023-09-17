@@ -1,0 +1,26 @@
+{
+  "name": "aigjam23",
+  "version": "0.0.1",
+  "description": "copycat game jam AI and Games 2023 Entry",
+  "main": "index.html",
+  "scripts": {
+    "test": "node -e \"console.log(\"not yet implemented (let's be real won't implement for game jam\");",
+    "run": "electron ."
+  },
+  "keywords": [
+    "game",
+    "dev",
+    "game",
+    "jam",
+    "ai",
+    "and",
+    "games",
+    "js",
+    "gamedev"
+  ],
+  "author": "Aaron Toomey <aaron@inkiebeard.codes>",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^26.2.1"
+  }
+}
