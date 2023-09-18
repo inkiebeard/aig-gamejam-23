@@ -5,9 +5,12 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <script src="libs/p5.js"></script>
     <script src="libs/p5.sound.js"></script>
-    
+
     <link href="libs/fonts.google.NOTO.Handjet.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <script src="utils.js"></script>
+    <script src="Ray.js"></script>
+    <script src="Entity.js"></script>
     <script src="Player.js"></script>
     <script src="Robot.js"></script>
     <script src="Crate.js"></script>
@@ -21,9 +24,10 @@
     </script>
   </head>
   <body>
+    <h2>Beardo's Unnamed Game</h2>
     <main></main>
     <section id="ui">
-      <h2>Beardo's Unnamed Game</h2>
+      <h3 id="gameover" class="hidden">Game Over</h3>
       <nav id="menu">
         <button id="mainAction">Play</button>
         <button id="resetAction">Reset</button>
@@ -33,18 +37,32 @@
       <section id="credits" class="hidden">
         <h3>Credits</h3>
         <ul>
-          <li>Game Design: Beardo</li>
-          <li>Art: Beardo, Kenney</li>
-          <li>Code: Beardo</li>
-          <li>Music: Beardo</li>
-          <li>Sound Effects: Beardo, Kenney</li>
+          <li><em>Game Design</em>: Aaron "Inkie Beard" Toomey</li>
+          <li>
+            <em>Art</em>: Aaron "Inkie Beard" Toomey<br />
+            <span class="pl-2">with assets from Kenney</span>
+          </li>
+          <li>
+            <em>Code</em>: Aaron "Inkie Beard" Toomey<br />
+            <span class="pl-2">with assets from Coding Train</span>
+          </li>
+          <li><em>Music</em>: Music by <a href="https://pixabay.com/users/daddy_s_music-22836301/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=10054">Zakhar Valaha</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=10054">Pixabay</a></li>
+          <li>
+            <em>Sound Effects</em>: assets from Kenney</span>
+          </li>
         </ul>
         <div class="card">
           <h4>Libraries, Assets & Resources</h4>
           <ul>
             <li><a href="http://p5js.org" target="_blank">P5js</a></li>
             <li><a href="https://kenney.nl" target="_blank">Kenney Amazing Assets</a></li>
-            <li><a href="https://thecodingtrain.com/challenges/171-wave-function-collapse" target="_blank">The Coding Train - WFC</a></li>
+            <li>
+              The Coding Train<br />
+              <div class="pl-2">
+                <a href="https://www.youtube.com/watch?v=TOEi6T2mtHo" target="_blank">Ray casting</a><br />
+                <a href="https://thecodingtrain.com/challenges/171-wave-function-collapse" target="_blank">Wave Function Collapse</a><br />
+              </div>
+            </li>
             <li><a href="https://www.youtube.com/@simondev758" target="_blank">@SimonDev YouTube</a></li>
             <li><a href="https://github.com/features/copilot" target="_blank">Github CoPilot</a></li>
           </ul>

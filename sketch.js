@@ -2,13 +2,16 @@ let canvasEl;
 const sounds = {}, images = {};
 
 function preload() {
-  soundFormats('ogg');
-  sounds.ding = loadSound('sounds/ding');
-  sounds.gameover = loadSound('sounds/gameover');
-  sounds.robot = loadSound('sounds/robot_sad');
-  sounds.phaserUp1 = loadSound('sounds/phaserUp1');
-  sounds.pop = loadSound('sounds/pop');
-  sounds.confirm = loadSound('sounds/confirm');
+  soundFormats('ogg', 'mp3');
+  sounds.ding = loadSound('sounds/ding.ogg');
+  sounds.gameover = loadSound('sounds/gameover.ogg');
+  sounds.robot = loadSound('sounds/robot_sad.ogg');
+  sounds.robotAttack = loadSound('sounds/robotAttack.ogg');
+  sounds.phaserUp1 = loadSound('sounds/phaserUp1.ogg');
+  sounds.pop = loadSound('sounds/pop.ogg');
+  sounds.confirm = loadSound('sounds/confirm.ogg');
+  sounds.music = loadSound('sounds/tense-detective-looped-drone-10054.mp3');
+  sounds.music.setVolume(0.3);
 
   images.crate = loadImage('images/crate.png');
   images.player = loadImage('images/player.png');

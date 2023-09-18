@@ -44,8 +44,18 @@ nav > * {
 h1, h2, h3, h4 {
   font-family: 'Handjet', cursive;
   letter-spacing: 1.5px;
+  text-align: center;
 }
 
 h2 {
   font-size: 2em;
+}
+
+.pl-2 {
+  padding-left: 1em;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
 }

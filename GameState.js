@@ -16,7 +16,25 @@ const STATICS = {
       return STATICS.defaultFixedRate;
     }
   },
-  playerSpeed: 5,
+  player: {
+    speed: 5,
+    HP: 100,
+  },
+  entities: {
+    drag: 0.85,
+  },
+  robot: {
+    speed: 3,
+    autoMoveDelay: 1000,
+    attackRate: 0.7,
+    HP: 30,
+    repairRate: 1.5 * (1000 / 128),
+    viewDistance: 120,
+    maxFailedToFind: 3,
+    scanDelay: 1000,
+    attackRate: 800,
+    maxDamage: 3,
+  },
 };
 
 const keyControllers = {
@@ -26,28 +44,28 @@ const keyControllers = {
   },
   Enter: () => !GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.mainPressed(),
   ArrowUp: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: -STATICS.playerSpeed });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: -STATICS.player.speed });
   },
   ArrowDown: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: STATICS.playerSpeed });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: STATICS.player.speed });
   },
   ArrowLeft: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: -STATICS.playerSpeed, y: 0 });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: -STATICS.player.speed, y: 0 });
   },
   ArrowRight: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: STATICS.playerSpeed, y: 0 });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: STATICS.player.speed, y: 0 });
   },
   w: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: -STATICS.playerSpeed });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: -STATICS.player.speed });
   },
   s: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: STATICS.playerSpeed });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: 0, y: STATICS.player.speed });
   },
   a: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: -STATICS.playerSpeed, y: 0 });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: -STATICS.player.speed, y: 0 });
   },
   d: () => {
-    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: STATICS.playerSpeed, y: 0 });
+    GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: STATICS.player.speed, y: 0 });
   },
 };
 
@@ -71,8 +89,12 @@ class GameState {
     this.views = {
       menu: document.getElementById("menu"),
       credits: document.getElementById("credits"),
+      gameover: document.getElementById("gameover"),
     };
     this.init();
+    this._state = STATES.GAME_START;
+    this.startTime = null;
+    this.endTime = null;
   }
 
   get isPlaying() {
@@ -87,6 +109,54 @@ class GameState {
     return Object.keys(images).length > 0;
   }
 
+  get currentState() {
+    return this._state;
+  }
+
+  set currentState(state) {
+    this._state = state;
+    switch (state) {
+      case STATES.READY:
+        this.views.menu.classList.remove("hidden");
+        this.buttons.main.textContent = "Play";
+        break;
+      case STATES.PAUSED:
+        this.buttons.main.textContent = "Resume";
+        this.stopTicks();
+        break;
+      case STATES.GAME_OVER:
+        sounds.music.stop();
+        this.endTime = Date.now();
+        const time = humanReadableTime(this.endTime - this.startTime);
+        this.views.gameover.textContent = 'Game Over: you lasted ' + time;
+        this.views.gameover.classList.remove("hidden");
+        this.views.menu.classList.remove("hidden");
+        this.currentState = STATES.GAME_START;
+        this.buttons.main.textContent = "Start Over";
+        this.stopTicks();
+        break;
+      case STATES.GAME_START:
+        this.views.menu.classList.remove("hidden");
+        this.buttons.main.textContent = "Start";
+        this.stopTicks();
+        break;
+      case STATES.PLAYING:
+        if (!sounds.music.isPlaying()) {
+          sounds.music.loop();
+        }
+        if (this.startTime === null) {
+          this.startTime = Date.now();
+        }
+        this.views.menu.classList.add("hidden");
+        this.buttons.main.textContent = "Pause";
+        this.startTicks();
+        break;
+      default:
+        console.log("unhandled state", state);
+        break;
+    }
+  }
+
   playSound(sound) {
     if (this.soundsReady && sounds[sound]) {
       sounds[sound].play();
@@ -99,11 +169,11 @@ class GameState {
       if (entity instanceof Robot) {
         entity.move(vector);
       }
-    })
+    });
   }
 
   init() {
-    this.level = 1;
+    this.level = 3;
     this.currentState = STATES.GAME_START;
     document.addEventListener("keydown", (e) => {
       if (keyControllers.hasOwnProperty(e.key)) {
@@ -118,7 +188,7 @@ class GameState {
       this.playSound("confirm");
       this.setup();
     });
-    
+
     // this.bindEvents();
     this.setup();
   }
@@ -137,22 +207,15 @@ class GameState {
       case STATES.READY:
         this.views.menu.classList.remove("hidden");
       case STATES.PAUSED:
+      case STATES.GAME_START:
         this.currentState = STATES.PLAYING;
-        this.buttons.main.textContent = "Pause";
-        this.toggleMenu();
-        this.startTicks();
         break;
       case STATES.GAME_OVER:
-        this.currentState = STATES.GAME_START;
-        this.buttons.main.textContent = "Start Over";
-        this.stopTicks();
         this.setup();
         break;
       case STATES.PLAYING:
       default:
         this.currentState = STATES.PAUSED;
-        this.buttons.main.textContent = "Resume";
-        this.stopTicks();
         break;
     }
     this.playSound("pop");
@@ -160,21 +223,52 @@ class GameState {
   }
 
   tick() {
-    for (const entity of this.entities) {
-      entity.update();
-    }
     for (const gameObject of this.gameObjects) {
       gameObject.update();
     }
+    for (const entity of this.entities) {
+      entity.update();
+    }
     this.player.update();
+    // do physics collisions
+    [...this.entities, ...this.gameObjects, this.player].forEach((v) => {
+      [...this.entities, ...this.gameObjects, this.player].forEach((v2) => {
+        if (v !== v2 && this.checkOverlap(v, v2)) {
+          v.collide(v2);
+          v2.collide(v);
+        }
+      });
+    });
+
+    // check for win condition
+
+    //check for player death
+    if (this.player.dead) {
+      this.currentState = STATES.GAME_OVER;
+      this.buttons.main.textContent = "Game Over";
+      this.playSound("gameover");
+      this.stopTicks();
+    }
   }
 
-  fixedUpdate() { // called per frame
+  checkOverlap(a, b) {
+    try {
+      return p5.Vector.dist(a.position, b.position) <= a.size / 2 + b.size / 2;
+    } catch (e) {
+      console.log("error checking overlap", a, b);
+      return false;
+    }
+  }
+
+  fixedUpdate() {
+    // called per frame
     this.render();
   }
 
   setup() {
     // setup game
+    this.startTime = null;
+    this.endTime = null;
     this.entities = [];
     this.gameObjects = [];
     if (!!canvasReady) {

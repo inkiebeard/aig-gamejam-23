@@ -2,7 +2,7 @@ class Crate {
   constructor({ x, y }, size = 50) {
     this.position = { x, y };
     this.size = size;
-    this.color = 'brown';
+    this.color = "brown";
     this.health = 100;
     this.maxHealth = 100;
   }
@@ -12,7 +12,14 @@ class Crate {
   }
 
   update() {
-    return
+    if (this.position.dist === undefined) {
+      this.position = createVector(this.position.x, this.position.y);
+    }
+    return;
+  }
+
+  collide(obj) {
+   // not implemented
   }
 
   render() {
