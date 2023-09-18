@@ -21,3 +21,7 @@ function stopAllSounds() {
     sound.stop();
   }
 }
+
+function checkVectorsInDist(v1, v2, dist) {
+  return Math.abs(v1.x - v2.x) < dist && Math.abs(v1.y - v2.y) < dist;
+}

@@ -1,7 +1,11 @@
 class Player extends Entity {
   constructor(position) {
     super(position);
-    this.inventory = {};
+    this.inventory = {
+      throwable: {
+        quantity: 3,
+      },
+    };
     this.position = position;
     this.moveCommands = [];
     this.acceleration = null;
@@ -23,6 +27,32 @@ class Player extends Entity {
     }
   }
 
+  use() {
+    if (this.dead) return;
+    for(const gObj of this.GS.gameObjects) {
+      if (checkVectorsInDist(this.position, gObj.position, this.size / 2 + gObj.size / 2)) {
+        if (gObj.hasGem) {
+          this.addInventory({ name: "gem", quantity: 1 });
+          gObj.hasGem = false;
+          this.playSound('bleep1')
+        } else if (!gObj.searched) {
+          this.addInventory({ name: random() > 0.5 ? "health" : "throwable", quantity: 1 });
+          gObj.searched = false;
+          this.playSound('bleep1')
+        }
+        break;
+      }
+      this.playSound('ding')
+    }
+  }
+  attack() {
+    if (this.dead) return;
+    if (!this.inventory.throwable || this.inventory.throwable.quantity <= 0) return;
+    this.inventory.throwable.quantity--;
+    this.GS.gameObjects.push(new Thrower(this.position.copy(), this.angle));
+    this.playSound('woosh1')
+  }
+
   render() {
     super.render();
     if (this.dead) return;
@@ -37,6 +67,18 @@ class Player extends Entity {
       circle(this.position.x, this.position.y, 10);
     }
     pop();
+
+    // inventory
+    let types = 0;
+    for (const [index, item] of Object.entries(this.inventory)) {
+      types++;
+      push();
+      fill(0);
+      textSize(16);
+      textAlign(RIGHT, CENTER);
+      text(index +": "+item.quantity, width - 5, 32 * types + 16);
+      pop();
+    }
   }
 
   update() {

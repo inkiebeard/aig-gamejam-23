@@ -10,6 +10,9 @@ function preload() {
   sounds.phaserUp1 = loadSound('sounds/phaserUp1.ogg');
   sounds.pop = loadSound('sounds/pop.ogg');
   sounds.confirm = loadSound('sounds/confirm.ogg');
+  sounds.bleep1 = loadSound('sounds/bleep1.ogg');
+  sounds.woosh1 = loadSound('sounds/woosh1.ogg');
+  
   sounds.music = loadSound('sounds/tense-detective-looped-drone-10054.mp3');
   sounds.music.setVolume(0.3);
 
@@ -17,10 +20,11 @@ function preload() {
   images.player = loadImage('images/player.png');
   images.robot = loadImage('images/robot.png');
   images.gem = loadImage('images/gem.png');
+  images.knife = loadImage('images/knife.png');
 }
 
 function setup() {
-  createCanvas(Math.min(1200, windowWidth), Math.min(800, windowHeight));
+  createCanvas(STATICS.width, STATICS.height);
   canvasEl = document.querySelector("main > canvas");
   fixStylePositioning();
   canvasReady = true;
@@ -32,7 +36,7 @@ function draw() {
 }
 
 function windowResized() {
-  resizeCanvas(Math.min(1200, windowWidth), Math.min(800, windowHeight));
+  resizeCanvas(STATICS.width, STATICS.height);
   fixStylePositioning();
 }
 

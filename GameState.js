@@ -4,6 +4,7 @@ const STATES = {
   PAUSED: "paused",
   GAME_OVER: "game_over",
   GAME_START: "game_start",
+  LEVEL_WON: "level_won",
 };
 
 const STATICS = {
@@ -15,6 +16,12 @@ const STATICS = {
     } catch (e) {
       return STATICS.defaultFixedRate;
     }
+  },
+  get width() {
+    return Math.min(1200, window.innerWidth);
+  },
+  get height() {
+    return Math.min(800, window.innerHeight);
   },
   player: {
     speed: 5,
@@ -38,7 +45,13 @@ const STATICS = {
 };
 
 const keyControllers = {
-  " ": () => !GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.mainPressed(),
+  " ": () => {
+    if (!GameState.instance.views.menu.classList.contains("hidden")) {
+      GameState.instance.mainPressed()
+    } else {
+      GameState.instance.isPlaying && GameState.instance.player.attack();
+    }
+  },
   Escape: () => {
     GameState.instance.toggleMenu();
   },
@@ -66,6 +79,9 @@ const keyControllers = {
   },
   d: () => {
     GameState.instance.isPlaying && GameState.instance.addMoveCommand({ x: STATICS.player.speed, y: 0 });
+  },
+  e: () => {
+    GameState.instance.isPlaying && GameState.instance.player.use();
   },
 };
 
@@ -127,8 +143,7 @@ class GameState {
       case STATES.GAME_OVER:
         sounds.music.stop();
         this.endTime = Date.now();
-        const time = humanReadableTime(this.endTime - this.startTime);
-        this.views.gameover.textContent = 'Game Over: you lasted ' + time;
+        this.views.gameover.textContent = "Game Over: you lasted " + humanReadableTime(this.endTime - this.startTime);
         this.views.gameover.classList.remove("hidden");
         this.views.menu.classList.remove("hidden");
         this.currentState = STATES.GAME_START;
@@ -139,6 +154,14 @@ class GameState {
         this.views.menu.classList.remove("hidden");
         this.buttons.main.textContent = "Start";
         this.stopTicks();
+        break;
+      case STATES.LEVEL_WON:
+        this.views.menu.classList.remove("hidden");
+        this.buttons.main.textContent = "Next Level";
+        this.stopTicks();
+        this.endTime = Date.now();
+        this.views.gameover.textContent = "Level Complete: you lasted " + humanReadableTime(this.endTime - this.startTime);
+        this.views.gameover.classList.remove("hidden");
         break;
       case STATES.PLAYING:
         if (!sounds.music.isPlaying()) {
@@ -154,6 +177,14 @@ class GameState {
       default:
         console.log("unhandled state", state);
         break;
+    }
+  }
+
+  removeGameObject(gameObject) {
+    if (gameObject instanceof Entity) {
+      this.entities = this.entities.filter((v) => v !== gameObject);
+    } else {
+      this.gameObjects = this.gameObjects.filter((v) => v !== gameObject);
     }
   }
 
@@ -185,7 +216,7 @@ class GameState {
 
     this.buttons.main.addEventListener("click", () => this.mainPressed());
     this.buttons.reset.addEventListener("click", () => {
-      this.playSound("confirm");
+      this.playSound("pop");
       this.setup();
     });
 
@@ -213,6 +244,13 @@ class GameState {
       case STATES.GAME_OVER:
         this.setup();
         break;
+      case STATES.LEVEL_WON:
+        this.level++;
+        this.setup();
+        setTimeout(() => {
+          this.currentState = STATES.PLAYING;
+        }, 500);
+        break;
       case STATES.PLAYING:
       default:
         this.currentState = STATES.PAUSED;
@@ -234,14 +272,18 @@ class GameState {
     [...this.entities, ...this.gameObjects, this.player].forEach((v) => {
       [...this.entities, ...this.gameObjects, this.player].forEach((v2) => {
         if (v !== v2 && this.checkOverlap(v, v2)) {
-          v.collide(v2);
+          // v.collide(v2);
           v2.collide(v);
         }
       });
     });
 
     // check for win condition
-
+    if (this.player.inventory.gem && this.player.inventory.gem.quantity >= 3) {
+      this.currentState = STATES.LEVEL_WON;
+      this.playSound("phaserUp1");
+      this.stopTicks();
+    }
     //check for player death
     if (this.player.dead) {
       this.currentState = STATES.GAME_OVER;
@@ -266,27 +308,31 @@ class GameState {
   }
 
   setup() {
+    this.views.gameover.classList.add("hidden");
     // setup game
     this.startTime = null;
     this.endTime = null;
     this.entities = [];
     this.gameObjects = [];
-    if (!!canvasReady) {
-      this.player = new Player({ x: random(width * 0.3, width * 0.7), y: random(height * 0.3, height * 0.7) });
-      for (let i = 0; i < this.level; i++) {
-        this.entities.push(new Robot({ x: random(width * 0.2, width * 0.8), y: random(height * 0.2, height * 0.8) }));
+    this.player = new Player({ x: randomRange(0, STATICS.width * 0.3), y: randomRange(0, STATICS.height) });
+    for (let i = 0; i < this.level; i++) {
+      let position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
+      if (checkVectorsInDist(position, this.player.position, 100)) {
+        position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
       }
-      for (let i = 0; i < 10; i++) {
-        this.gameObjects.push(new Crate({ x: random(width * 0.2, width * 0.8), y: random(height * 0.2, height * 0.8) }));
+      this.entities.push(new Robot(position));
+    }
+    for (let i = 0; i < this.level * 5; i++) {
+      let size = randomRange(20, 50);
+      let position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
+      for (const obj of [...this.entities, ...this.gameObjects, this.player]) {
+        if (checkVectorsInDist(position, obj, size + 100)) {
+          position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
+        }
       }
-    } else {
-      this.player = new Player({ x: 100, y: 100 });
-      for (let i = 0; i < this.level; i++) {
-        this.entities.push(new Robot({ x: Math.random() * window.innerWidth + window.innerWidth * 0.2, y: Math.random() * window.innerHeight + window.innerHeight * 0.2 }));
-      }
-      for (let i = 0; i < 10; i++) {
-        this.gameObjects.push(new Crate({ x: Math.random() * window.innerWidth + window.innerWidth * 0.2, y: Math.random() * window.innerHeight + window.innerHeight * 0.2 }));
-      }
+      const crate = new Crate(position, size);
+      crate.hasGem = i < this.level;
+      this.gameObjects.push(crate);
     }
     this.currentState = STATES.READY;
   }

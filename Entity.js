@@ -9,6 +9,10 @@ class Entity {
     this.lastSound = null;
   }
 
+  get GS() {
+    return new GameState(); // singleton gets existing instance
+  }
+
   get dead() {
     return this.health <= 0;
   }
@@ -16,7 +20,7 @@ class Entity {
   playSound(sound) {
     if (!this.lastSound || Date.now() - this.lastSound > 1000) {
       this.lastSound = Date.now();
-      GameState.instance.playSound(sound);
+      this.GS.playSound(sound);
     }
   }
 
@@ -30,7 +34,7 @@ class Entity {
       this.position = createVector(this.position.x, this.position.y);
     }
     if (this.dead) return false;
-    if (GameState.instance.currentState !== STATES.PLAYING) return false;
+    if (this.GS.currentState !== STATES.PLAYING) return false;
     return true;
   }
 

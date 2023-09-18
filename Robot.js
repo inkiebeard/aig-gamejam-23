@@ -56,7 +56,6 @@ class Robot extends Entity {
       image(images.robot, 0, 0, this.size, this.size);
     } else {
       fill(0, 0, 255);
-
       circle(this.position.x, this.position.y, 10);
     }
     pop();
@@ -128,6 +127,7 @@ class Robot extends Entity {
       this.state = Robot.STATES.REPAIRING;
     } else if (this.state === Robot.STATES.REPAIRING && this.health >= this.maxHealth * 0.85) {
       this.state = Robot.STATES.ROAMING;
+      this.maxHealth = this.maxHealth * 0.85
     }
     switch (this.state) {
       case Robot.STATES.ROAMING:
@@ -149,21 +149,24 @@ class Robot extends Entity {
         }
         break;
       case Robot.STATES.REPAIRING:
-        this.health += STATICS.robot.repairRate;
-        this.health = Math.min(this.health, this.maxHealth);
+        if (!this.lastRepair || Date.now() - this.lastRepair > 1000) {
+          this.health += STATICS.robot.repairRate;
+          this.health = Math.min(this.health, this.maxHealth);
+          this.lastRepair = Date.now();
+        }
         break;
       case Robot.STATES.ATTACKING:
         const player = GameState.instance.player;
         if (player && !player.dead) {
           if (this.lastSeen && this.position.dist(this.lastSeen) < this.attackRange) {
-            if (this.position.dist(player.position) + player.size / 2 < this.attackRange && (!this.lastAttack || Date.now() - this.lastAttack > STATICS.robot.attackRate)) {
+            if (this.position.dist(player.position)  <= this.attackRange + player.size && (!this.lastAttack || Date.now() - this.lastAttack > STATICS.robot.attackRate)) {
               gameState.playSound("robotAttack");
               this.lastAttack = Date.now();
               player.takeDamage(this.damage);
             } else {
               if (Date.now() - this.lastScan > STATICS.robot.scanDelay) {
                 this.lookForPlayer();
-                this.move(p5.Vector.sub(this.lastSeen, this.position).normalize());
+                this.move(this.position.copy().sub(player.position).normalize());
               }
             }
           } else {
