@@ -9,6 +9,10 @@ class Crate {
     this.searched = false;
   }
 
+  get GS() {
+    return new GameState(); // singleton gets existing instance
+  }
+
   get dead() {
     return this.health <= 0;
   }
@@ -44,14 +48,15 @@ class Crate {
     push();
     if (images.crate) {
       imageMode(CENTER);
-      image(images.crate, this.position.x, this.position.y, this.size, this.size);
+      image(this.searched ? images.crateOpen : images.crate, this.position.x, this.position.y, this.size, this.size);
     } else {
       fill(this.color);
       rect(this.position.x, this.position.y, this.size, this.size);
     }
-    if (this.hasGem) {
-      imageMode(CENTER);
-      image(images.gem, this.position.x, this.position.y, this.size * 0.5, this.size * 0.5);
+    if (this.GS.showGems && this.hasGem) {
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text("💎", this.position.x, this.position.y);
     }
     pop();
   }

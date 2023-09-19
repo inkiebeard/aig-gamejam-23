@@ -27,7 +27,7 @@ class Robot extends Entity {
     this.drag = 0.75;
     this.failedToFind = 0;
     this.lastScan = Date.now();
-    this.showRays = true;
+    this.showRays = false;
     this.lastSeen = null;
     this.lastSound = null;
   }
@@ -42,7 +42,16 @@ class Robot extends Entity {
 
   render() {
     super.render();
-    if (this.dead) return;
+    if (this.dead){
+      push();
+      fill(255, 0, 0);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text("🔩", this.position.x, this.position.y - 10);
+      text("⚙️", this.position.x-10, this.position.y + 10);
+      pop();
+      return
+    }
     push();
     if (Robot.STATE_OUTPUT[this.state]) {
       textSize(16);

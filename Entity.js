@@ -7,6 +7,7 @@ class Entity {
     this.maxHealth = 100;
     this.size = 28;
     this.lastSound = null;
+    this.lastPos = null;
   }
 
   get GS() {
@@ -65,8 +66,9 @@ class Entity {
       pop();
     } else {
       fill(0)
-      textSize(32);
-      text("💀", this.position.x, this.position.y - 36);
+      textSize(18);
+      textAlign(CENTER, CENTER);
+      text("💀", this.position.x, this.position.y);
     }
   }
 
@@ -76,6 +78,7 @@ class Entity {
   }
 
   doMovement() {
+    this.lastPos = this.position ? this.position.copy() : null;
     this.acceleration.limit(STATICS.player.speed);
     this.angle = this.acceleration.heading();
     this.position.add(this.acceleration);
@@ -98,6 +101,6 @@ class Entity {
   }
 
   collide(obj) {
-    this.position.sub(obj.acceleration || this.acceleration);
+    this.position = this.lastPos;
   }
 }

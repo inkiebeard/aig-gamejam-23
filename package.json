@@ -5,7 +5,7 @@
   "main": "index.html",
   "scripts": {
     "test": "node -e \"console.log(\"not yet implemented (let's be real won't implement for game jam\");",
-    "run": "electron ."
+    "start": "electron ."
   },
   "keywords": [
     "game",
@@ -20,7 +20,8 @@
   ],
   "author": "Aaron Toomey <aaron@inkiebeard.codes>",
   "license": "MIT",
-  "dependencies": {
-    "electron": "^26.2.1"
+  "devDependencies": {
+    "electron": "^26.2.1",
+    "esbuild": "^0.19.3"
   }
 }

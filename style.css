@@ -41,7 +41,7 @@ nav > * {
   display: none;
 }
 
-h1, h2, h3, h4 {
+h1, h2, h3, h4, h5, h6 {
   font-family: 'Handjet', cursive;
   letter-spacing: 1.5px;
   text-align: center;
@@ -58,4 +58,21 @@ h2 {
 ul {
   list-style: none;
   padding: 0;
+}
+
+button {
+  min-width: 100px;
+  padding: 0.5rem 0.2rem;
+  border-radius: 5px;
+  border: 1px solid #000;
+  background-color: #fff;
+}
+
+button:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.gameover {
+  font-size: 2rem;
 }

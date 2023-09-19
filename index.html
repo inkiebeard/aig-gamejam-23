@@ -2,11 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <script src="libs/p5.js"></script>
     <script src="libs/p5.sound.js"></script>
 
-    <link href="libs/fonts.google.NOTO.Handjet.css" rel="stylesheet" type="text/css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@100;400;700&family=Noto+Sans:wght@100;400;500;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script src="utils.js"></script>
     <script src="Ray.js"></script>
@@ -25,14 +26,16 @@
     </script>
   </head>
   <body>
-    <h2>Beardo's Unnamed Game</h2>
+    <h2>The Warehouse Caper</h2>
+    <h5>#AIandGamesJam23 - Theme: <em>Copycat</em></h5>
     <main></main>
     <section id="ui">
-      <h3 id="gameover" class="hidden">Game Over</h3>
+      <p id="gameover" class="hidden gameover">Game Over</p>
       <nav id="menu">
         <button id="mainAction">Play</button>
         <button id="resetAction">Reset</button>
         <button onclick="toggleById('credits')">Credits</button>
+        <button id="musicAction">Music: On</button>
       </nav>
 
       <section id="credits" class="hidden">
@@ -47,10 +50,12 @@
             <em>Code</em>: Aaron "Inkie Beard" Toomey<br />
             <span class="pl-2">with assets from Coding Train</span>
           </li>
-          <li><em>Music</em>: Music by <a href="https://pixabay.com/users/daddy_s_music-22836301/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=10054">Zakhar Valaha</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=10054">Pixabay</a></li>
           <li>
-            <em>Sound Effects</em>: assets from Kenney</span>
+            <em>Music</em>: Music by
+            <a href="https://pixabay.com/users/daddy_s_music-22836301/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=10054">Zakhar Valaha</a> from
+            <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=10054">Pixabay</a>
           </li>
+          <li><em>Sound Effects</em>: assets from Kenney</li>
         </ul>
         <div class="card">
           <h4>Libraries, Assets & Resources</h4>

@@ -4,7 +4,7 @@ class Thrower {
     this.angle = angle;
     this.size = 5;
     this.speed = 10;
-    this.damage = 10;
+    this.damage = 2;
     this.lifeTime = 1000;
     this.createdAt = Date.now();
     this.color = "grey";
@@ -26,9 +26,10 @@ class Thrower {
       return
     }
     this.position.add(createVector(this.speed * Math.cos(this.angle), this.speed * Math.sin(this.angle)));
+    this.speed *= 0.99;
     for(const ent of this.GS.entities) {
       if (this.GS.checkOverlap(this, ent)) {
-        ent.takeDamage(this.damage);
+        ent.takeDamage(this.damage * this.speed);
         this.dead = true;
         this.GS.removeGameObject(this);
         return

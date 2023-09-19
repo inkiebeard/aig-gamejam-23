@@ -36,7 +36,7 @@ const STATICS = {
     attackRate: 0.7,
     HP: 30,
     repairRate: 1.5 * (1000 / 128),
-    viewDistance: 120,
+    viewDistance: 160,
     maxFailedToFind: 3,
     scanDelay: 1000,
     attackRate: 800,
@@ -47,7 +47,7 @@ const STATICS = {
 const keyControllers = {
   " ": () => {
     if (!GameState.instance.views.menu.classList.contains("hidden")) {
-      GameState.instance.mainPressed()
+      GameState.instance.mainPressed();
     } else {
       GameState.instance.isPlaying && GameState.instance.player.attack();
     }
@@ -101,6 +101,7 @@ class GameState {
     this.buttons = {
       main: document.getElementById("mainAction"),
       reset: document.getElementById("resetAction"),
+      music: document.getElementById("musicAction"),
     };
     this.views = {
       menu: document.getElementById("menu"),
@@ -111,6 +112,7 @@ class GameState {
     this._state = STATES.GAME_START;
     this.startTime = null;
     this.endTime = null;
+    this.playMusic = true;
   }
 
   get isPlaying() {
@@ -141,7 +143,7 @@ class GameState {
         this.stopTicks();
         break;
       case STATES.GAME_OVER:
-        sounds.music.stop();
+        this.playMusic && sounds.music.stop();
         this.endTime = Date.now();
         this.views.gameover.textContent = "Game Over: you lasted " + humanReadableTime(this.endTime - this.startTime);
         this.views.gameover.classList.remove("hidden");
@@ -160,11 +162,11 @@ class GameState {
         this.buttons.main.textContent = "Next Level";
         this.stopTicks();
         this.endTime = Date.now();
-        this.views.gameover.textContent = "Level Complete: you lasted " + humanReadableTime(this.endTime - this.startTime);
+        this.views.gameover.textContent = "Level Complete: completed in " + humanReadableTime(this.endTime - this.startTime);
         this.views.gameover.classList.remove("hidden");
         break;
       case STATES.PLAYING:
-        if (!sounds.music.isPlaying()) {
+        if (this.playMusic && !sounds.music.isPlaying()) {
           sounds.music.loop();
         }
         if (this.startTime === null) {
@@ -219,6 +221,16 @@ class GameState {
       this.playSound("pop");
       this.setup();
     });
+    this.buttons.music.addEventListener("click", () => {
+      this.playSound("pop");
+      this.playMusic = !this.playMusic;
+      this.buttons.music.textContent = this.playMusic ? "Music: On" : "Music: Off";
+      if (this.playMusic && this.currentState === STATES.PLAYING && !sounds.music.isPlaying()) {
+        sounds.music.loop();
+      } else if (sounds.music.isPlaying()) {
+        sounds.music.stop();
+      }
+    });
 
     // this.bindEvents();
     this.setup();
@@ -272,14 +284,13 @@ class GameState {
     [...this.entities, ...this.gameObjects, this.player].forEach((v) => {
       [...this.entities, ...this.gameObjects, this.player].forEach((v2) => {
         if (v !== v2 && this.checkOverlap(v, v2)) {
-          // v.collide(v2);
-          v2.collide(v);
+          v.collide(v2);
         }
       });
     });
 
     // check for win condition
-    if (this.player.inventory.gem && this.player.inventory.gem.quantity >= 3) {
+    if (this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.max(3,this.level)) {
       this.currentState = STATES.LEVEL_WON;
       this.playSound("phaserUp1");
       this.stopTicks();

@@ -1,3 +1,9 @@
+const InventoryIconMap = {
+  gem: '💎',
+  throwable: '🗡️',
+  health: '🏥'
+}
+
 class Player extends Entity {
   constructor(position) {
     super(position);
@@ -5,6 +11,8 @@ class Player extends Entity {
       throwable: {
         quantity: 3,
       },
+      health: { quantity: 1 },
+      gem: { quantity: 0 },
     };
     this.position = position;
     this.moveCommands = [];
@@ -29,20 +37,29 @@ class Player extends Entity {
 
   use() {
     if (this.dead) return;
+    let useHealth = true;
     for(const gObj of this.GS.gameObjects) {
-      if (checkVectorsInDist(this.position, gObj.position, this.size / 2 + gObj.size / 2)) {
+      if (checkVectorsInDist(this.position, gObj.position, this.size / 2 + gObj.size / 2) && gObj.searched !== true) {
         if (gObj.hasGem) {
           this.addInventory({ name: "gem", quantity: 1 });
           gObj.hasGem = false;
+          gObj.searched = false;
           this.playSound('bleep1')
         } else if (!gObj.searched) {
           this.addInventory({ name: random() > 0.5 ? "health" : "throwable", quantity: 1 });
-          gObj.searched = false;
+          gObj.searched = true;
           this.playSound('bleep1')
         }
+        this.playSound('ding')
+        useHealth = false;
         break;
       }
-      this.playSound('ding')
+    }
+    if (useHealth && this.inventory.health && this.inventory.health.quantity > 0 && this.health < this.maxHealth) {
+      this.health += 5;
+      this.inventory.health.quantity--;
+      this.playSound('bleep1')
+      this.health = Math.min(this.health, this.maxHealth);
     }
   }
   attack() {
@@ -76,7 +93,7 @@ class Player extends Entity {
       fill(0);
       textSize(16);
       textAlign(RIGHT, CENTER);
-      text(index +": "+item.quantity, width - 5, 32 * types + 16);
+      text(InventoryIconMap[index] +": "+item.quantity, width - 5, 32 * types + 16);
       pop();
     }
   }
