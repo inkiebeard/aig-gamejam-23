@@ -41,6 +41,9 @@ class Entity {
 
   takeDamage(damage) {
     this.health -= damage;
+    if (this.health <= 0) {
+      this.playSound('robotDeath')
+    }
     return this.dead
   }
 

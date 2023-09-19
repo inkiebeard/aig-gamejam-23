@@ -10,8 +10,10 @@ function preload() {
   sounds.phaserUp1 = loadSound('sounds/phaserUp1.ogg');
   sounds.pop = loadSound('sounds/pop.ogg');
   sounds.confirm = loadSound('sounds/confirm.ogg');
-  sounds.bleep1 = loadSound('sounds/bleep1.ogg');
+  sounds.pickup = loadSound('sounds/pickup.ogg');
   sounds.woosh1 = loadSound('sounds/woosh1.ogg');
+  sounds.gem = loadSound('sounds/gem.ogg');
+  sounds.robotDeath = loadSound('sounds/robotDeath.ogg');
   
   sounds.music = loadSound('sounds/tense-detective-looped-drone-10054.mp3');
   sounds.music.setVolume(0.2);

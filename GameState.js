@@ -113,6 +113,7 @@ class GameState {
     this.startTime = null;
     this.endTime = null;
     this.playMusic = true;
+    this.playedSounds = [];
   }
 
   get isPlaying() {
@@ -191,8 +192,15 @@ class GameState {
   }
 
   playSound(sound) {
-    if (this.soundsReady && sounds[sound]) {
+    if (this.soundsReady && sounds[sound] && this.playedSounds.length <= 10) {
       sounds[sound].play();
+      sound !== 'music' && this.playedSounds.push(sound);
+      if (this.playedSounds.length >= 9) {
+        sounds[this.playedSounds.shift()].stopAll();
+      }
+      setTimeout(() => {
+        this.playedSounds = this.playedSounds.filter((v) => v !== sound);
+      }, sounds[sound].duration() * 1000);
     }
   }
 
@@ -261,7 +269,7 @@ class GameState {
         this.setup();
         setTimeout(() => {
           this.currentState = STATES.PLAYING;
-        }, 500);
+        }, 50);
         break;
       case STATES.PLAYING:
       default:

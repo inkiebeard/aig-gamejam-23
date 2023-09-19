@@ -44,11 +44,11 @@ class Player extends Entity {
           this.addInventory({ name: "gem", quantity: 1 });
           gObj.hasGem = false;
           gObj.searched = false;
-          this.playSound('bleep1')
+          this.playSound('pickup')
         } else if (!gObj.searched) {
           this.addInventory({ name: random() > 0.5 ? "health" : "throwable", quantity: 1 });
           gObj.searched = true;
-          this.playSound('bleep1')
+          this.playSound('gem')
         }
         this.playSound('ding')
         useHealth = false;
