@@ -88,13 +88,13 @@ class Player extends Entity {
     // inventory
     let types = 0;
     for (const [index, item] of Object.entries(this.inventory)) {
-      types++;
       push();
       fill(0);
       textSize(16);
-      textAlign(RIGHT, CENTER);
-      text(InventoryIconMap[index] +": "+item.quantity, width - 5, 32 * types + 16);
+      textAlign(CENTER, CENTER);
+      text(InventoryIconMap[index] +": "+item.quantity, width / 2 - (48 * types) + 28, height * 0.95);
       pop();
+      types++;
     }
   }
 
