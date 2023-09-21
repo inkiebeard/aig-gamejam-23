@@ -51,10 +51,10 @@ const STATICS = {
     repairRate: 1.5 * (1000 / 128),
     viewDistance: 160,
     maxFailedToFind: 3,
-    scanDelay: 1000,
+    scanDelay: 900,
     attackRate: 800,
     maxDamage: 3,
-    alertTime: 1800,
+    alertTime: 3800,
   },
 };
 
@@ -121,18 +121,22 @@ class GameState {
       main: document.getElementById("mainAction"),
       reset: document.getElementById("resetAction"),
       music: document.getElementById("musicAction"),
+      howto: document.getElementById("howtoAction"),
     };
     this.views = {
       menu: document.getElementById("menu"),
       credits: document.getElementById("credits"),
+      howTo: document.getElementById("howTo"),
       gameover: document.getElementById("gameover"),
       loading: document.getElementById("loading"),
+      title: document.getElementById("title"),
     };
     this.init();
     this._state = STATES.GAME_START;
     this.startTime = null;
     this.endTime = null;
     this.playedSounds = [];
+    this.exitPos = null;
   }
 
   get isPlaying() {
@@ -149,6 +153,10 @@ class GameState {
 
   get currentState() {
     return this._state;
+  }
+
+  get exitOpen() {
+    return this.player && this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.min(3, this.level);
   }
 
   set currentState(state) {
@@ -168,18 +176,18 @@ class GameState {
         this.endTime = Date.now();
         this.views.gameover.textContent = "Game Over: you lasted " + humanReadableTime(this.endTime - this.startTime);
         this.views.gameover.classList.remove("hidden");
-        this.views.menu.classList.remove("hidden");
+        this.showMenu();
         this.buttons.main.textContent = "Start Over";
         this.stopTicks();
         break;
       case STATES.GAME_START:
         this.views.loading.classList.add("hidden");
-        this.views.menu.classList.remove("hidden");
+        this.showMenu();
         this.buttons.main.textContent = "Start";
         this.stopTicks();
         break;
       case STATES.LEVEL_WON:
-        this.views.menu.classList.remove("hidden");
+        this.showMenu();
         this.buttons.main.textContent = "Next Level";
         this.stopTicks();
         this.endTime = Date.now();
@@ -193,7 +201,7 @@ class GameState {
         if (this.startTime === null) {
           this.startTime = Date.now();
         }
-        this.views.menu.classList.add("hidden");
+        this.hideMenu();
         this.buttons.main.textContent = "Pause";
         this.startTicks();
         break;
@@ -223,6 +231,14 @@ class GameState {
       setTimeout(() => {
         this.playedSounds = this.playedSounds.filter((v) => v !== sound);
       }, sounds[sound].duration() * 1000);
+    } else {
+      if (this.playedSounds.length > 10) {
+        console.warn("too many sounds playing", this.playedSounds);
+      } else if (!sounds[sound]) {
+        console.warn("sound not found", sound);
+      } else {
+        console.warn("sound not ready or not found", sound);
+      }
     }
   }
 
@@ -346,10 +362,13 @@ class GameState {
     });
 
     // check for win condition
-    if (this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.min(3, this.level)) {
+    if (this.exitOpen && this.exitPos && this.player.position.dist(this.exitPos) <= this.player.size + 10) {
       this.currentState = STATES.LEVEL_WON;
       this.playSound("phaserUp1");
       this.stopTicks();
+    } else if (this.exitOpen && !this.exitPos) {
+      this.exitPos = createVector(this.player.position.x >= STATICS.halfWidth ? random(10, 30) : random(STATICS.width-40, STATICS.width-20), this.player.position.y >= STATICS.halfHeight ? random(10, 30) : random(STATICS.height-40, STATICS.height-20));
+      this.addNotify("🙌 Exit Open 🙌", createVector(STATICS.halfWidth, STATICS.halfHeight), "phaserUp1", 1500, 48, 0);
     }
     //check for player death
     if (this.player.dead) {
@@ -379,6 +398,20 @@ class GameState {
     this.saveToStorage();
   }
 
+  showMenu() {
+    this.views.menu.classList.remove("hidden");
+    this.views.credits.classList.add("hidden");
+    this.views.howTo.classList.add("hidden");
+    this.views.title.classList.remove("hidden");
+  }
+
+  hideMenu() {
+    this.views.menu.classList.add("hidden");
+    this.views.credits.classList.add("hidden");
+    this.views.howTo.classList.add("hidden");
+    this.views.title.classList.add("hidden");
+  }
+
   async setup(autoplay = false) {
     this.views.loading.classList.remove("hidden");
     this.currentState = STATES.GAME_START;
@@ -389,12 +422,13 @@ class GameState {
     this.entities = [];
     this.gameObjects = [];
     this.notifies = [];
+    this.exitPos = null;
     this.player = new Player({ x: randomRange(0, STATICS.width * 0.3), y: randomRange(0, STATICS.height) });
     for (let i = 0; i < this.level; i++) {
-      let position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
+      let position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
       const started = Date.now();
-      while (checkVectorsInDist(position, this.player.position, 50) && Date.now() - started < 200) {
-        position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
+      while (checkVectorsInDist(position, this.player.position, STATICS.robot.viewDistance * 1.3) && Date.now() - started < 200) {
+        position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
       }
       this.entities.push(new Robot(position));
     }
@@ -448,9 +482,9 @@ class GameState {
 
   toggleMenu() {
     if (this.views.menu.classList.contains("hidden")) {
-      this.views.menu.classList.remove("hidden");
+      this.showMenu();
     } else if (!this.views.menu.classList.contains("hidden") && ![STATES.READY, STATES.GAME_OVER, STATES.GAME_START].includes(this.currentState)) {
-      this.views.menu.classList.add("hidden");
+      this.hideMenu();
     }
     this.playSound("pop");
   }
@@ -475,14 +509,22 @@ class GameState {
       text("Time: " + humanReadableTime(Date.now() - this.startTime), 10, 40);
       pop();
     }
+
+    if (this.exitOpen && this.exitPos) {
+      push();
+      fill(0, 255, 0, 20);
+      noStroke();
+      image(images.exit, this.exitPos.x, this.exitPos.y, 32);
+      pop();
+    }
   }
 
   mousePressed(x, y) {
     if (this.views.menu.classList.contains("hidden")) {
       const mousePos = createVector(x, y);
       for (const gameObject of this.gameObjects) {
-        if (checkVectorsInDist(mousePos, gameObject.position, gameObject.size / 2)) {
-          if (this.player.position.dist(gameObject.position) <= this.player.size / 2 + gameObject.size / 2 + 2) {
+        if (checkVectorsInDist(mousePos, gameObject.position, gameObject.size)) {
+          if (this.player.position.dist(gameObject.position) <= this.player.size + gameObject.size / 2 + 2) {
             this.player.useObject(gameObject);
             return;
           } else {
@@ -491,8 +533,8 @@ class GameState {
         }
       }
       for (const entity of this.entities) {
-        if (checkVectorsInDist(mousePos, entity.position, entity.size / 2)) {
-          if (this.player.position.dist(entity.position) <= this.player.size / 2 + entity.size / 2 + 2 && entity.dead) {
+        if (checkVectorsInDist(mousePos, entity.position, entity.size)) {
+          if (this.player.position.dist(entity.position) <= this.player.size + entity.size / 2 + 2 && entity.dead) {
             this.player.useObject(entity);
             return;
           } else {

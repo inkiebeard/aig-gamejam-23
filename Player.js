@@ -38,19 +38,17 @@ class Player extends AutoAgent {
   }
 
   useObject(gObj) {
-    if (checkVectorsInDist(this.position, gObj.position, this.size / 2 + gObj.size / 2) && gObj.searched !== true) {
+    if (checkVectorsInDist(this.position, gObj.position, this.size + gObj.size / 2 + 2) && gObj.searched !== true) {
       if (gObj.hasGem) {
         this.addInventory({ name: "gem", quantity: 1 });
         gObj.hasGem = false;
         gObj.searched = false;
-        this.playSound('pickup')
         this.GS.addNotify("💎", this.position.copy(),'pickup', 1500, 32, 0);
         return true
       } else if (!gObj.searched) {
         const type = random() > 0.2 ? "health" : "throwable"
         this.addInventory({ name: type, quantity: 1 });
         gObj.searched = true;
-        this.playSound()
         this.GS.addNotify(InventoryIconMap[type], this.position.copy(),'gem', 1500, 20, 0);
         return true
       }

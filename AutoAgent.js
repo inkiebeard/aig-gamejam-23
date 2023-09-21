@@ -168,11 +168,12 @@ class AutoAgent {
     if (this.GS.checkOverlap(this, obj)) {
       this.position = this.position.copy().sub(this.vel.copy().mult(2));
     }
+    if (!(obj instanceof Crate)) return
     const avgPostMovement = this.lastPositions.map((pos, i) => (i > 0 ? pos.dist(this.lastPositions[i - 1]) : 0)).reduce((a, b) => a + b, 0) / this.lastPositions.length;
     if (this.target && avgPostMovement < 0.1) {
       if (this.target && this.target.dist(this.position) < 50) {
         this.target = null;
-      } else {
+      } else if(this.target) {
         // shift position slightly
         if (this.position.x < this.target.x) {
           this.position.add(createVector(-2, 0));
@@ -185,7 +186,12 @@ class AutoAgent {
             this.position.add(createVector(0, -2));
           }
         }
+      } else {
+        // shift position slightly to the right
+        this.position.add(createVector(3, 0));
       }
+    } else if (avgPostMovement < 0.1) {
+      this.position.add(createVector(3, 0));
     }
   }
 }

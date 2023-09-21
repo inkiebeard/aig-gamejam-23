@@ -25,6 +25,7 @@ function preload() {
   images.robot = loadImage('images/robot.png');
   images.gem = loadImage('images/gem.png');
   images.knife = loadImage('images/knife.png');
+  images.exit = loadImage('images/exit.png');
   images.warehouse = loadImage('images/warehouse-floor.png');
 }
 

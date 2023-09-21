@@ -92,3 +92,14 @@ button:hover {
 #loading {
   margin: 5rem;
 }
+
+#howTo {
+  max-width: 60vw;
+  padding: 2rem;
+  background-color: #fff;
+  color: #333;
+
+  @media screen and (max-width: 768px) {
+    max-width: 90vw;
+  }
+}

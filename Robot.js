@@ -33,6 +33,7 @@ class Robot extends AutoAgent {
     this.lastSound = null;
     this.speed = STATICS.robot.speed;
     this.lastAlerted = null;
+    this.investigated = [];
   }
 
   get attackRange() {
@@ -78,8 +79,20 @@ class Robot extends AutoAgent {
     }
     if (this.lastSeen) {
       push();
-      stroke(255, 0, 0, 20);
+      stroke(255, 0, 0, 40);
       line(this.position.x, this.position.y, this.lastSeen.x, this.lastSeen.y);
+      pop();
+    }
+
+    if (this.state === Robot.STATES.ALERT) {
+      push();
+      fill(255, 255, 50, 30);
+      noStroke();
+      circle(this.position.x, this.position.y, STATICS.robot.viewDistance);
+      fill(0)
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      text("🚨", this.position.x, this.position.y - 10);
       pop();
     }
   }
@@ -107,14 +120,15 @@ class Robot extends AutoAgent {
         break;
       }
     }
-    if (canSeePlayer) {
+    const playerInFront = this.angle > this.position.copy().sub(GameState.instance.player.position).heading() - 0.5 && this.angle < this.position.copy().sub(GameState.instance.player.position).heading() + 0.5;
+    if (canSeePlayer || (playerInFront && this.position.dist(GameState.instance.player.position) < STATICS.robot.viewDistance)) {
       this.state = Robot.STATES.ATTACKING;
-      this.lastSeen = point.copy();
-      this.GS.addNotify("‼️", this.position.copy(), "robot_sad");
+      this.lastSeen = point ? point.copy() : this.GS.player.position.copy();
+      this.GS.addNotify("‼️", this.position.copy(), "robot");
       this.failedToFind = 0;
     } else {
       this.failedToFind++;
-      if (this.failedToFind > STATICS.robot.maxFailedToFind) {
+      if (this.failedToFind > (this.state === Robot.STATES.ALERT ? 10 : 1) * STATICS.robot.maxFailedToFind) {
         const hadLastSeen = this.lastSeen !== null;
         this.lastSeen = null;
         this.state = Robot.STATES.ROAMING;
@@ -163,23 +177,24 @@ class Robot extends AutoAgent {
         if (Date.now() - this.lastScan > STATICS.robot.scanDelay) {
           this.lookForPlayer();
           if (!this.lastSeen) {
-            const crates = this.GS.gameObjects.filter((go) => go instanceof Crate && go.position.dist(this.position) < this.attackRange * 5);
-            const searched = crates.find((c) => c.searched);
+            const crates = this.GS.gameObjects.filter((go) => go instanceof Crate && go.position.dist(this.position) < STATICS.robot.viewDistance);
+            const searched = crates.find((c) => c.searched && !this.investigated.includes(c));
             if (searched) {
+              this.investigated.push(searched);
               this.state = Robot.STATES.ALERT;
               this.lastAlerted = Date.now();
               this.target = searched.position.copy();
-              this.GS.addNotify("‼️", this.position.copy(), "robot_sad");
+              this.GS.addNotify("‼️", this.position.copy(), "robot");
               return;
             }
             const attackers = this.GS.gameObjects.filter(
-              (go) => go instanceof Robot && go.state === Robot.STATES.ATTACKING && go.position.dist(this.position) < this.attackRange * 5
+              (go) => go instanceof Robot && go.state === Robot.STATES.ATTACKING && go.position.dist(this.position) < STATICS.robot.viewDistance
             );
             if (attackers.length > 0) {
               this.state = Robot.STATES.ALERT;
               this.lastAlerted = Date.now();
               this.target = attackers[0].position.copy();
-              this.GS.addNotify("‼️", this.position.copy(), "robot_sad");
+              this.GS.addNotify("‼️", this.position.copy(), "robot");
               return;
             }
           }
@@ -211,21 +226,24 @@ class Robot extends AutoAgent {
               this.target = this.lastSeen.copy();
             }
             this.doMovement();
-            if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
-              this.lookForPlayer();
-            }
+            
           }
         } else {
           this.state = Robot.STATES.ROAMING;
         }
         break;
       case Robot.STATES.ALERT:
+        this.doMovement();
         if (player && !player.dead) {
-          if (this.lastSeen && this.position.dist(this.lastSeen) < this.attackRange * 5) {
+          if (this.lastSeen && this.position.dist(this.lastSeen) < STATICS.robot.viewDistance) {
             this.lookAt(player.position);
-            this.lookForPlayer();
+            if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
+              this.lookForPlayer();
+            }
           } else {
-            this.lookForPlayer();
+            if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
+              this.lookForPlayer();
+            }
             if (!this.lastSeen && Date.now() - this.lastAlerted > STATICS.robot.alertTime) {
               this.state = Robot.STATES.ROAMING;
             }
