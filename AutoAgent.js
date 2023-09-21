@@ -1,4 +1,4 @@
-class Entity {
+class AutoAgent {
   constructor(position) {
     this.position = position;
     this.moveCommands = [];
@@ -42,7 +42,7 @@ class Entity {
       this.position = createVector(this.position.x, this.position.y);
       this.acc = createVector(0, 0);
     }
-    if (this.timeOfDeath && Date.now() - this.timeOfDeath > 1500) {
+    if (this.timeOfDeath && Date.now() - this.timeOfDeath > 3500) {
       this.GS.removeGameObject(this);
       return false;
     }
@@ -159,6 +159,10 @@ class Entity {
     }
   }
 
+  lookAt(vector) {
+    this.angle = p5.Vector.sub(vector, this.position).heading();
+  }
+
   collide(obj) {
     this.position = this.lastPos;
     if (this.GS.checkOverlap(this, obj)) {
@@ -169,8 +173,18 @@ class Entity {
       if (this.target && this.target.dist(this.position) < 50) {
         this.target = null;
       } else {
-        // shift position slightly to the right
-        this.position.add(createVector(3, 0));
+        // shift position slightly
+        if (this.position.x < this.target.x) {
+          this.position.add(createVector(-2, 0));
+          if (this.position.y > this.target.y) {
+            this.position.add(createVector(0, 2));
+          }
+        } else {
+          this.position.add(createVector(2, 0));
+          if (this.position.y < this.target.y) {
+            this.position.add(createVector(0, -2));
+          }
+        }
       }
     }
   }

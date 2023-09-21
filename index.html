@@ -13,7 +13,7 @@
     <script src="Ray.js"></script>
     <script src="Notify.js"></script>
     <script src="Thrower.js"></script>
-    <script src="Entity.js"></script>
+    <script src="AutoAgent.js"></script>
     <script src="Player.js"></script>
     <script src="Robot.js"></script>
     <script src="Crate.js"></script>
@@ -36,13 +36,15 @@
     <main></main>
     <section id="ui">
       <p id="gameover" class="hidden gameover">Game Over</p>
+      <section id="loading" class="hidden">
+        <img src="images/loading-gears.gif">
+      </section>
       <nav id="menu">
         <button id="mainAction">Play</button>
         <button id="resetAction">Reset</button>
         <button onclick="toggleById('credits')">Credits</button>
         <button id="musicAction">Music: On</button>
       </nav>
-
       <section id="credits" class="hidden">
         <section>
           <h3>Credits</h3>

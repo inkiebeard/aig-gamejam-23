@@ -1,4 +1,4 @@
-class Robot extends Entity {
+class Robot extends AutoAgent {
   static get STATES() {
     return {
       ROAMING: "roaming",
@@ -32,6 +32,7 @@ class Robot extends Entity {
     this.lastSeen = null;
     this.lastSound = null;
     this.speed = STATICS.robot.speed;
+    this.lastAlerted = null;
   }
 
   get attackRange() {
@@ -44,15 +45,15 @@ class Robot extends Entity {
 
   render() {
     super.render();
-    if (this.dead){
+    if (this.dead) {
       push();
       fill(255, 0, 0);
       textSize(16);
       textAlign(CENTER, CENTER);
       text("🔩", this.position.x, this.position.y - 10);
-      text("⚙️", this.position.x-10, this.position.y + 10);
+      text("⚙️", this.position.x - 10, this.position.y + 10);
       pop();
-      return
+      return;
     }
     push();
     if (Robot.STATE_OUTPUT[this.state]) {
@@ -109,7 +110,7 @@ class Robot extends Entity {
     if (canSeePlayer) {
       this.state = Robot.STATES.ATTACKING;
       this.lastSeen = point.copy();
-      this.GS.addNotify("‼️", this.position.copy(), 'robot_sad');
+      this.GS.addNotify("‼️", this.position.copy(), "robot_sad");
       this.failedToFind = 0;
     } else {
       this.failedToFind++;
@@ -118,7 +119,7 @@ class Robot extends Entity {
         this.lastSeen = null;
         this.state = Robot.STATES.ROAMING;
         if (hadLastSeen) {
-          this.GS.addNotify("-.-", this.position.copy(), 'ding');
+          this.GS.addNotify("-.-", this.position.copy(), "ding");
         }
         this.failedToFind = 0;
       }
@@ -142,8 +143,10 @@ class Robot extends Entity {
       this.state = Robot.STATES.REPAIRING;
     } else if (this.state === Robot.STATES.REPAIRING && this.health >= this.maxHealth * 0.85) {
       this.state = Robot.STATES.ROAMING;
-      this.maxHealth = this.maxHealth * 0.85
+      this.maxHealth = this.maxHealth * 0.85;
     }
+
+    const player = GameState.instance.player;
     switch (this.state) {
       case Robot.STATES.ROAMING:
         const moves = this.moveCommands.splice(0, 3);
@@ -159,7 +162,29 @@ class Robot extends Entity {
         this.doMovement(moves.length > 0);
         if (Date.now() - this.lastScan > STATICS.robot.scanDelay) {
           this.lookForPlayer();
+          if (!this.lastSeen) {
+            const crates = this.GS.gameObjects.filter((go) => go instanceof Crate && go.position.dist(this.position) < this.attackRange * 5);
+            const searched = crates.find((c) => c.searched);
+            if (searched) {
+              this.state = Robot.STATES.ALERT;
+              this.lastAlerted = Date.now();
+              this.target = searched.position.copy();
+              this.GS.addNotify("‼️", this.position.copy(), "robot_sad");
+              return;
+            }
+            const attackers = this.GS.gameObjects.filter(
+              (go) => go instanceof Robot && go.state === Robot.STATES.ATTACKING && go.position.dist(this.position) < this.attackRange * 5
+            );
+            if (attackers.length > 0) {
+              this.state = Robot.STATES.ALERT;
+              this.lastAlerted = Date.now();
+              this.target = attackers[0].position.copy();
+              this.GS.addNotify("‼️", this.position.copy(), "robot_sad");
+              return;
+            }
+          }
         }
+
         break;
       case Robot.STATES.REPAIRING:
         if (!this.lastRepair || Date.now() - this.lastRepair > 1000) {
@@ -169,10 +194,9 @@ class Robot extends Entity {
         }
         break;
       case Robot.STATES.ATTACKING:
-        const player = GameState.instance.player;
         if (player && !player.dead) {
           if (this.lastSeen && this.position.dist(this.lastSeen) < this.attackRange) {
-            if (this.position.dist(player.position)  <= this.attackRange + player.size && (!this.lastAttack || Date.now() - this.lastAttack > STATICS.robot.attackRate)) {
+            if (this.position.dist(player.position) <= this.attackRange + player.size && (!this.lastAttack || Date.now() - this.lastAttack > STATICS.robot.attackRate)) {
               gameState.playSound("robotAttack");
               this.lastAttack = Date.now();
               player.takeDamage(this.damage);
@@ -193,6 +217,19 @@ class Robot extends Entity {
           }
         } else {
           this.state = Robot.STATES.ROAMING;
+        }
+        break;
+      case Robot.STATES.ALERT:
+        if (player && !player.dead) {
+          if (this.lastSeen && this.position.dist(this.lastSeen) < this.attackRange * 5) {
+            this.lookAt(player.position);
+            this.lookForPlayer();
+          } else {
+            this.lookForPlayer();
+            if (!this.lastSeen && Date.now() - this.lastAlerted > STATICS.robot.alertTime) {
+              this.state = Robot.STATES.ROAMING;
+            }
+          }
         }
         break;
     }

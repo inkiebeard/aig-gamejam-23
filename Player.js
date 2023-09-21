@@ -4,7 +4,7 @@ const InventoryIconMap = {
   health: '🏥'
 }
 
-class Player extends Entity {
+class Player extends AutoAgent {
   constructor(position) {
     super(position);
     this.inventory = {

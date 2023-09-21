@@ -7,6 +7,12 @@ const STATES = {
   LEVEL_WON: "level_won",
 };
 
+const ObjectTypes = {
+  crate: Crate,
+  robot: Robot,
+  player: Player,
+};
+
 const STATICS = {
   tickRate: 1000 / 128,
   defaultFixedRate: 1000 / 60,
@@ -48,6 +54,7 @@ const STATICS = {
     scanDelay: 1000,
     attackRate: 800,
     maxDamage: 3,
+    alertTime: 1800,
   },
 };
 
@@ -119,6 +126,7 @@ class GameState {
       menu: document.getElementById("menu"),
       credits: document.getElementById("credits"),
       gameover: document.getElementById("gameover"),
+      loading: document.getElementById("loading"),
     };
     this.init();
     this._state = STATES.GAME_START;
@@ -147,6 +155,7 @@ class GameState {
     this._state = state;
     switch (state) {
       case STATES.READY:
+        this.views.loading.classList.add("hidden");
         this.views.menu.classList.remove("hidden");
         this.buttons.main.textContent = "Play";
         break;
@@ -164,6 +173,7 @@ class GameState {
         this.stopTicks();
         break;
       case STATES.GAME_START:
+        this.views.loading.classList.add("hidden");
         this.views.menu.classList.remove("hidden");
         this.buttons.main.textContent = "Start";
         this.stopTicks();
@@ -196,7 +206,7 @@ class GameState {
   removeGameObject(gameObject) {
     if (gameObject instanceof Notify) {
       this.notifies = this.notifies.filter((v) => v !== gameObject);
-    } else if (gameObject instanceof Entity) {
+    } else if (gameObject instanceof AutoAgent) {
       this.entities = this.entities.filter((v) => v !== gameObject);
     } else {
       this.gameObjects = this.gameObjects.filter((v) => v !== gameObject);
@@ -370,6 +380,7 @@ class GameState {
   }
 
   async setup(autoplay = false) {
+    this.views.loading.classList.remove("hidden");
     this.currentState = STATES.GAME_START;
     this.views.gameover.classList.add("hidden");
     // setup game
@@ -381,30 +392,59 @@ class GameState {
     this.player = new Player({ x: randomRange(0, STATICS.width * 0.3), y: randomRange(0, STATICS.height) });
     for (let i = 0; i < this.level; i++) {
       let position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
-      while (checkVectorsInDist(position, this.player.position, 100)) {
+      const started = Date.now();
+      while (checkVectorsInDist(position, this.player.position, 50) && Date.now() - started < 200) {
         position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
       }
       this.entities.push(new Robot(position));
     }
     for (let i = 0; i < Math.min(this.level * 5, 30); i++) {
-      let size = randomRange(20, 50);
-      let position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
-      const started = Date.now();
-      while([...this.entities, ...this.gameObjects, this.player].some ((obj) => checkVectorsInDist(position, obj.position, obj.size + 100)) && Date.now() - started < 200) {
-        position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
-      }
-      const crate = new Crate(position, size);
-      crate.hasGem = i < Math.min(3, this.level);
-      this.gameObjects.push(crate);
+      this.spawnNoOverlap();
     }
-    if (autoplay) {
-      this.currentState = STATES.PLAYING;
+    setTimeout(() => {
+      this.checkFinishedPlacing(autoplay);
+    }, 10);
+  }
+
+  checkFinishedPlacing(autoplay) {
+    if (this.gameObjects.length < Math.min(this.level * 5, 30)) {
+      setTimeout(() => {
+        this.checkFinishedPlacing(autoplay);
+      }, 10);
     } else {
-      this.currentState = STATES.READY;
+      const gems = this.gameObjects.filter((v) => v instanceof Crate).filter((v) => v.hasGem);
+      if (gems.length < Math.min(3, this.level)) {
+        for (let i = gems.length; i < Math.min(3, this.level); i++) {
+          const crate = this.gameObjects.find((v) => v instanceof Crate && !v.hasGem);
+          crate.hasGem = true;
+        }
+      } else if (gems.length > Math.min(3, this.level)) {
+        for (let i = Math.min(3, this.level); i < gems.length; i++) {
+          const crate = this.gameObjects.find((v) => v instanceof Crate && v.hasGem);
+          crate.hasGem = false;
+        }
+      }
+      this.currentState = autoplay ? STATES.PLAYING : STATES.READY;
     }
   }
 
-  async spawnNoOverlap()
+  async spawnNoOverlap() {
+    let position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
+    let attempts = 0;
+    const tryCreation = () => {
+      if ([...this.entities, ...this.gameObjects, this.player].some((obj) => checkVectorsInDist(position, obj.position, obj.size + 10)) && attempts < 100) {
+        position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
+        attempts++;
+        setTimeout(tryCreation, 10);
+      } else {
+        let size = randomRange(20, 50);
+        const crate = new Crate(position, size);
+        crate.hasGem = random() > 0.2;
+        this.gameObjects.push(crate);
+      }
+    };
+    tryCreation();
+  }
 
   toggleMenu() {
     if (this.views.menu.classList.contains("hidden")) {
@@ -452,8 +492,13 @@ class GameState {
       }
       for (const entity of this.entities) {
         if (checkVectorsInDist(mousePos, entity.position, entity.size / 2)) {
-          this.player.attack(entity.position.copy().sub(this.player.position).heading());
-          return;
+          if (this.player.position.dist(entity.position) <= this.player.size / 2 + entity.size / 2 + 2 && entity.dead) {
+            this.player.useObject(entity);
+            return;
+          } else {
+            this.player.attack(entity.position.copy().sub(this.player.position).heading());
+            return;
+          }
         }
       }
       this.player.target = mousePos;

@@ -88,3 +88,7 @@ button:hover {
 #credits > * {
   margin: 1rem;
 }
+
+#loading {
+  margin: 5rem;
+}
