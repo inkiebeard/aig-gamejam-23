@@ -14,6 +14,7 @@ function preload() {
   sounds.woosh1 = loadSound('sounds/woosh1.ogg');
   sounds.gem = loadSound('sounds/gem.ogg');
   sounds.robotDeath = loadSound('sounds/robotDeath.ogg');
+  sounds.bleep1 = loadSound('sounds/bleep1.ogg');
   
   sounds.music = loadSound('sounds/tense-detective-looped-drone-10054.mp3');
   sounds.music.setVolume(0.2);
@@ -24,6 +25,7 @@ function preload() {
   images.robot = loadImage('images/robot.png');
   images.gem = loadImage('images/gem.png');
   images.knife = loadImage('images/knife.png');
+  images.warehouse = loadImage('images/warehouse-floor.png');
 }
 
 function setup() {
@@ -34,7 +36,7 @@ function setup() {
 }
 
 function draw() {
-  background(220);
+  background(images.warehouse);
   gameState.fixedUpdate();
 }
 
@@ -46,4 +48,9 @@ function windowResized() {
 function fixStylePositioning() {
   canvasEl.style.left = `${(windowWidth - width) / 2}px`;
   canvasEl.style.top = `${(windowHeight - height) / 2}px`;
+}
+
+
+function mousePressed() {
+  gameState.mousePressed(mouseX, mouseY);
 }

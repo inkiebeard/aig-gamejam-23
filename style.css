@@ -38,7 +38,7 @@ nav > * {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -75,4 +75,16 @@ button:hover {
 
 .gameover {
   font-size: 2rem;
+}
+
+#credits {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+#credits > * {
+  margin: 1rem;
 }

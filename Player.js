@@ -19,6 +19,8 @@ class Player extends Entity {
     this.acceleration = null;
     this.health = STATICS.player.HP;
     this.maxHealth = STATICS.player.HP;
+    this.angle = 0
+    this.speed = STATICS.player.speed;
   }
 
   addInventory(item) {
@@ -35,24 +37,39 @@ class Player extends Entity {
     }
   }
 
+  useObject(gObj) {
+    if (checkVectorsInDist(this.position, gObj.position, this.size / 2 + gObj.size / 2) && gObj.searched !== true) {
+      if (gObj.hasGem) {
+        this.addInventory({ name: "gem", quantity: 1 });
+        gObj.hasGem = false;
+        gObj.searched = false;
+        this.playSound('pickup')
+        this.GS.addNotify("💎", this.position.copy(),'pickup', 1500, 32, 0);
+        return true
+      } else if (!gObj.searched) {
+        const type = random() > 0.2 ? "health" : "throwable"
+        this.addInventory({ name: type, quantity: 1 });
+        gObj.searched = true;
+        this.playSound()
+        this.GS.addNotify(InventoryIconMap[type], this.position.copy(),'gem', 1500, 20, 0);
+        return true
+      }
+      this.playSound('ding')
+      useHealth = false;
+    }
+    return false
+  }
+
   use() {
     if (this.dead) return;
     let useHealth = true;
     for(const gObj of this.GS.gameObjects) {
-      if (checkVectorsInDist(this.position, gObj.position, this.size / 2 + gObj.size / 2) && gObj.searched !== true) {
-        if (gObj.hasGem) {
-          this.addInventory({ name: "gem", quantity: 1 });
-          gObj.hasGem = false;
-          gObj.searched = false;
-          this.playSound('pickup')
-        } else if (!gObj.searched) {
-          this.addInventory({ name: random() > 0.5 ? "health" : "throwable", quantity: 1 });
-          gObj.searched = true;
-          this.playSound('gem')
+      if (gObj instanceof Crate) {
+        const searched = this.useObject(gObj);
+        if (searched) {
+          useHealth = false;
+          break;
         }
-        this.playSound('ding')
-        useHealth = false;
-        break;
       }
     }
     if (useHealth && this.inventory.health && this.inventory.health.quantity > 0 && this.health < this.maxHealth) {
@@ -62,11 +79,11 @@ class Player extends Entity {
       this.health = Math.min(this.health, this.maxHealth);
     }
   }
-  attack() {
+  attack(angle = this.angle) {
     if (this.dead) return;
     if (!this.inventory.throwable || this.inventory.throwable.quantity <= 0) return;
     this.inventory.throwable.quantity--;
-    this.GS.gameObjects.push(new Thrower(this.position.copy(), this.angle));
+    this.GS.gameObjects.push(new Thrower(this.position.copy(), angle));
     this.playSound('woosh1')
   }
 
@@ -92,7 +109,7 @@ class Player extends Entity {
       fill(0);
       textSize(16);
       textAlign(CENTER, CENTER);
-      text(InventoryIconMap[index] +": "+item.quantity, width / 2 - (48 * types) + 28, height * 0.95);
+      text(InventoryIconMap[index] +" "+item.quantity, width / 2 - (48 * types) + 28, height * 0.95);
       pop();
       types++;
     }
@@ -101,15 +118,12 @@ class Player extends Entity {
   update() {
     if (!super.update()) return false;
    
-    const vector = createVector(0, 0);
     const moves = this.moveCommands.splice(0, 5);
     if (moves.length > 0) {
       for (const moveCommand of moves) {
-        vector.add(createVector(moveCommand.x, moveCommand.y));
+        this.steer(moveCommand);
       }
-      vector.div(moves.length);
-      this.acceleration.add(vector);
     }
-    this.doMovement();
+    this.doMovement(moves.length > 0);
   }
 }

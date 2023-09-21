@@ -7,6 +7,7 @@ class Crate {
     this.maxHealth = 100;
     this.hasGem = false;
     this.searched = false;
+    this.collisions = true;
   }
 
   get GS() {

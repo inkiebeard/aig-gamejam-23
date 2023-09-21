@@ -4,6 +4,7 @@ class Robot extends Entity {
       ROAMING: "roaming",
       ATTACKING: "attacking",
       REPAIRING: "repairing",
+      ALERT: "alert",
     };
   }
 
@@ -30,6 +31,7 @@ class Robot extends Entity {
     this.showRays = false;
     this.lastSeen = null;
     this.lastSound = null;
+    this.speed = STATICS.robot.speed;
   }
 
   get attackRange() {
@@ -87,9 +89,9 @@ class Robot extends Entity {
   }
 
   autoMove() {
-    const moveStep = Math.min(width, height) * 0.2;
-    const vector = createVector(random(-moveStep, moveStep), random(-moveStep, moveStep));
-    this.move(vector);
+    if (this.target === null) {
+      this.target = createVector(random(0, STATICS.width), random(0, STATICS.height));
+    }
   }
 
   // raycast along the direction of movement in a cone for the player
@@ -107,13 +109,17 @@ class Robot extends Entity {
     if (canSeePlayer) {
       this.state = Robot.STATES.ATTACKING;
       this.lastSeen = point.copy();
-      this.playSound("robot");
+      this.GS.addNotify("‼️", this.position.copy(), 'robot_sad');
       this.failedToFind = 0;
     } else {
       this.failedToFind++;
-      this.lastSeen = null;
       if (this.failedToFind > STATICS.robot.maxFailedToFind) {
+        const hadLastSeen = this.lastSeen !== null;
+        this.lastSeen = null;
         this.state = Robot.STATES.ROAMING;
+        if (hadLastSeen) {
+          this.GS.addNotify("-.-", this.position.copy(), 'ding');
+        }
         this.failedToFind = 0;
       }
     }
@@ -140,19 +146,17 @@ class Robot extends Entity {
     }
     switch (this.state) {
       case Robot.STATES.ROAMING:
-        if (Date.now() - this.lastMove > STATICS.robot.autoMoveDelay && this.state === Robot.STATES.ROAMING) {
-          this.autoMove();
-        }
-        const vector = createVector(0, 0);
         const moves = this.moveCommands.splice(0, 3);
         if (moves.length > 0) {
+          this.target = null;
           for (const moveCommand of moves) {
-            vector.add(createVector(moveCommand.x, moveCommand.y));
+            this.steer(moveCommand);
           }
-          vector.div(moves.length);
-          this.acceleration.add(vector);
         }
-        this.doMovement();
+        if (moves.length === 0 && Date.now() - this.lastMove > STATICS.robot.autoMoveDelay && this.state === Robot.STATES.ROAMING) {
+          this.autoMove();
+        }
+        this.doMovement(moves.length > 0);
         if (Date.now() - this.lastScan > STATICS.robot.scanDelay) {
           this.lookForPlayer();
         }
@@ -173,17 +177,17 @@ class Robot extends Entity {
               this.lastAttack = Date.now();
               player.takeDamage(this.damage);
             } else {
-              if (Date.now() - this.lastScan > STATICS.robot.scanDelay) {
+              if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
+                this.target = this.lastSeen.copy();
                 this.lookForPlayer();
-                this.move(this.position.copy().sub(player.position).normalize());
               }
             }
           } else {
             if (this.lastSeen) {
-              this.steer(this.lastSeen.copy().sub(this.position).normalize());
+              this.target = this.lastSeen.copy();
             }
             this.doMovement();
-            if (Date.now() - this.lastScan > STATICS.robot.scanDelay) {
+            if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
               this.lookForPlayer();
             }
           }

@@ -9,6 +9,7 @@ class Thrower {
     this.createdAt = Date.now();
     this.color = "grey";
     this.dead = false;
+    this.collisions = true;
   }
 
   get GS() {

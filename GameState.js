@@ -23,15 +23,22 @@ const STATICS = {
   get height() {
     return Math.min(800, window.innerHeight);
   },
+  get halfWidth() {
+    return STATICS.width / 2;
+  },
+  get halfHeight() {
+    return STATICS.height / 2;
+  },
   player: {
-    speed: 5,
+    speed: 1,
     HP: 100,
   },
   entities: {
-    drag: 0.85,
+    drag: 0.65,
+    speed: 1,
   },
   robot: {
-    speed: 3,
+    speed: 0.3,
     autoMoveDelay: 1000,
     attackRate: 0.7,
     HP: 30,
@@ -54,6 +61,11 @@ const keyControllers = {
   },
   Escape: () => {
     GameState.instance.toggleMenu();
+    if (GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.currentState === STATES.PAUSED) {
+      GameState.instance.currentState = STATES.PLAYING;
+    } else if (!GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.currentState === STATES.PLAYING) {
+      GameState.instance.currentState = STATES.PAUSED;
+    }
   },
   Enter: () => !GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.mainPressed(),
   ArrowUp: () => {
@@ -112,7 +124,6 @@ class GameState {
     this._state = STATES.GAME_START;
     this.startTime = null;
     this.endTime = null;
-    this.playMusic = true;
     this.playedSounds = [];
   }
 
@@ -149,7 +160,6 @@ class GameState {
         this.views.gameover.textContent = "Game Over: you lasted " + humanReadableTime(this.endTime - this.startTime);
         this.views.gameover.classList.remove("hidden");
         this.views.menu.classList.remove("hidden");
-        this.currentState = STATES.GAME_START;
         this.buttons.main.textContent = "Start Over";
         this.stopTicks();
         break;
@@ -184,7 +194,9 @@ class GameState {
   }
 
   removeGameObject(gameObject) {
-    if (gameObject instanceof Entity) {
+    if (gameObject instanceof Notify) {
+      this.notifies = this.notifies.filter((v) => v !== gameObject);
+    } else if (gameObject instanceof Entity) {
       this.entities = this.entities.filter((v) => v !== gameObject);
     } else {
       this.gameObjects = this.gameObjects.filter((v) => v !== gameObject);
@@ -194,7 +206,7 @@ class GameState {
   playSound(sound) {
     if (this.soundsReady && sounds[sound] && this.playedSounds.length <= 10) {
       sounds[sound].play();
-      sound !== 'music' && this.playedSounds.push(sound);
+      sound !== "music" && this.playedSounds.push(sound);
       if (this.playedSounds.length >= 9) {
         sounds[this.playedSounds.shift()].stopAll();
       }
@@ -213,8 +225,35 @@ class GameState {
     });
   }
 
+  loadPreviousSaved() {
+    try {
+      const saved = localStorage.getItem("beardo_games_warehouseCaper");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        this.level = parsed.level;
+        this.playMusic = parsed.playMusic;
+        this.buttons.music.textContent = this.playMusic ? "Music: On" : "Music: Off";
+      } else {
+        this.level = 1;
+        this.playMusic = true;
+        this.buttons.music.textContent = "Music: On";
+      }
+    } catch (e) {
+      console.log("error loading saved game", e);
+    }
+  }
+
+  saveToStorage() {
+    try {
+      const { level, playMusic } = this;
+      localStorage.setItem("beardo_games_warehouseCaper", JSON.stringify({ level, playMusic }));
+    } catch (e) {
+      console.log("error saving game", e);
+    }
+  }
+
   init() {
-    this.level = 3;
+    this.loadPreviousSaved();
     this.currentState = STATES.GAME_START;
     document.addEventListener("keydown", (e) => {
       if (keyControllers.hasOwnProperty(e.key)) {
@@ -240,8 +279,7 @@ class GameState {
       }
     });
 
-    // this.bindEvents();
-    this.setup();
+    setTimeout(() => this.setup(), 200);
   }
 
   startTicks() {
@@ -266,10 +304,7 @@ class GameState {
         break;
       case STATES.LEVEL_WON:
         this.level++;
-        this.setup();
-        setTimeout(() => {
-          this.currentState = STATES.PLAYING;
-        }, 50);
+        this.setup(true);
         break;
       case STATES.PLAYING:
       default:
@@ -287,18 +322,21 @@ class GameState {
     for (const entity of this.entities) {
       entity.update();
     }
+    for (const notify of this.notifies) {
+      notify.update();
+    }
     this.player.update();
     // do physics collisions
     [...this.entities, ...this.gameObjects, this.player].forEach((v) => {
       [...this.entities, ...this.gameObjects, this.player].forEach((v2) => {
-        if (v !== v2 && this.checkOverlap(v, v2)) {
+        if (v !== v2 && v.collisions && v2.collisions && this.checkOverlap(v, v2)) {
           v.collide(v2);
         }
       });
     });
 
     // check for win condition
-    if (this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.max(3,this.level)) {
+    if (this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.min(3, this.level)) {
       this.currentState = STATES.LEVEL_WON;
       this.playSound("phaserUp1");
       this.stopTicks();
@@ -310,6 +348,10 @@ class GameState {
       this.playSound("gameover");
       this.stopTicks();
     }
+  }
+
+  addNotify(text, position = { x: STATICS.halfWidth, y: STATICS.halfHeight }, sound, lifeTime = 2500, size = 16, color = 0) {
+    this.notifies.push(new Notify(position, text, sound, lifeTime, size, color));
   }
 
   checkOverlap(a, b) {
@@ -324,37 +366,45 @@ class GameState {
   fixedUpdate() {
     // called per frame
     this.render();
+    this.saveToStorage();
   }
 
-  setup() {
+  async setup(autoplay = false) {
+    this.currentState = STATES.GAME_START;
     this.views.gameover.classList.add("hidden");
     // setup game
     this.startTime = null;
     this.endTime = null;
     this.entities = [];
     this.gameObjects = [];
+    this.notifies = [];
     this.player = new Player({ x: randomRange(0, STATICS.width * 0.3), y: randomRange(0, STATICS.height) });
     for (let i = 0; i < this.level; i++) {
       let position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
-      if (checkVectorsInDist(position, this.player.position, 100)) {
+      while (checkVectorsInDist(position, this.player.position, 100)) {
         position = { x: randomRange(STATICS.width * 0.3, STATICS.width), y: randomRange(0, STATICS.height) };
       }
       this.entities.push(new Robot(position));
     }
-    for (let i = 0; i < this.level * 5; i++) {
+    for (let i = 0; i < Math.min(this.level * 5, 30); i++) {
       let size = randomRange(20, 50);
       let position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
-      for (const obj of [...this.entities, ...this.gameObjects, this.player]) {
-        if (checkVectorsInDist(position, obj, size + 100)) {
-          position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
-        }
+      const started = Date.now();
+      while([...this.entities, ...this.gameObjects, this.player].some ((obj) => checkVectorsInDist(position, obj.position, obj.size + 100)) && Date.now() - started < 200) {
+        position = { x: randomRange(0, STATICS.width), y: randomRange(0, STATICS.height) };
       }
       const crate = new Crate(position, size);
-      crate.hasGem = i < this.level;
+      crate.hasGem = i < Math.min(3, this.level);
       this.gameObjects.push(crate);
     }
-    this.currentState = STATES.READY;
+    if (autoplay) {
+      this.currentState = STATES.PLAYING;
+    } else {
+      this.currentState = STATES.READY;
+    }
   }
+
+  async spawnNoOverlap()
 
   toggleMenu() {
     if (this.views.menu.classList.contains("hidden")) {
@@ -374,5 +424,43 @@ class GameState {
       entity.render();
     }
     this.player.render();
+    for (const notify of this.notifies) {
+      notify.render();
+    }
+    if (this.currentState === STATES.PLAYING) {
+      push();
+      fill(0);
+      textAlign(LEFT, TOP);
+      text("Level: " + this.level, 10, 20);
+      text("Time: " + humanReadableTime(Date.now() - this.startTime), 10, 40);
+      pop();
+    }
+  }
+
+  mousePressed(x, y) {
+    if (this.views.menu.classList.contains("hidden")) {
+      const mousePos = createVector(x, y);
+      for (const gameObject of this.gameObjects) {
+        if (checkVectorsInDist(mousePos, gameObject.position, gameObject.size / 2)) {
+          if (this.player.position.dist(gameObject.position) <= this.player.size / 2 + gameObject.size / 2 + 2) {
+            this.player.useObject(gameObject);
+            return;
+          } else {
+            this.player.target = gameObject.position.copy();
+          }
+        }
+      }
+      for (const entity of this.entities) {
+        if (checkVectorsInDist(mousePos, entity.position, entity.size / 2)) {
+          this.player.attack(entity.position.copy().sub(this.player.position).heading());
+          return;
+        }
+      }
+      this.player.target = mousePos;
+      const direction = mousePos.copy().sub(this.player.position);
+      for (const entity of this.entities) {
+        entity.target = random() > 0.3 ? entity.position.copy().sub(direction) : entity.position.copy().add(direction);
+      }
+    }
   }
 }
