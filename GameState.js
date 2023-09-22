@@ -53,7 +53,7 @@ const STATICS = {
     maxFailedToFind: 3,
     scanDelay: 900,
     attackRate: 800,
-    maxDamage: 3,
+    maxDamage: 5,
     alertTime: 3800,
     bossFastestAttackSpeed: 100, // tenth of a second
   },

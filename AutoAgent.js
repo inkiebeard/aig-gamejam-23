@@ -15,6 +15,7 @@ class AutoAgent {
     this.speed = STATICS.entities.speed;
     this.lastPositions = [];
     this.collisions = true;
+    this.firstStuck = null;
   }
 
   get GS() {
@@ -167,15 +168,23 @@ class AutoAgent {
   collide(obj) {
     this.position = this.lastPos;
     if (this.GS.checkOverlap(this, obj) && obj.vel && obj.vel.mag() > 0) {
-      this.steer(obj.vel)
+      this.steer(obj.vel);
     }
-    if ((obj instanceof Crate) && this.vel) {
-      const existingVel = this.vel.copy()
+    if (obj instanceof Crate && this.vel) {
+      const existingVel = this.vel.copy();
       this.vel.set(0, 0);
       this.steer(existingVel ? existingVel.mult(-0.1) : p5.Vector.fromAngle(this.angle).normalize().mult(-1));
     }
     const avgPostMovement = this.lastPositions.map((pos, i) => (i > 0 ? pos.dist(this.lastPositions[i - 1]) : 0)).reduce((a, b) => a + b, 0) / this.lastPositions.length;
     if (avgPostMovement < 0.1) {
+      if (this.firstStuck === null) {
+        this.firstStuck = Date.now();
+      } else if (Date.now() - this.firstStuck > 1500) {
+        this.target = null;
+        this.position.x += random(-3, 3);
+        this.position.y += random(-3, 3);
+        this.firstStuck = null;
+      }
       if (this.target && this.target.dist(this.position) < 50) {
         this.target = null;
       } else if (this.target) {

@@ -43,6 +43,7 @@ class Robot extends AutoAgent {
 
   set state(state) {
     this._state = state;
+    if (this.GS.currentState !== STATES.PLAYING) return;
     switch (state) {
       case Robot.STATES.ROAMING:
         this.GS.addNotify("-.-", this.position, "ding");
@@ -261,28 +262,33 @@ class Robot extends AutoAgent {
         }
         break;
       case Robot.STATES.ALERT:
-        this.doMovement();
         if (player && !player.dead) {
           if (this.target && this.position.dist(this.target) < this.attackRange) {
             this.lookAt(player.position);
             if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
               this.lookForPlayer();
             }
+          } else if (this.target) {
+            if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
+              this.lookForPlayer();
+            }
+            if (Date.now() - this.lastAlerted > STATICS.robot.alertTime) {
+              if (this.target && this.position.dist(this.target) < STATICS.robot.viewDistance) {
+                this.state = Robot.STATES.ROAMING;
+                this.target = null;
+              }
+            }
           } else {
             if (Date.now() - this.lastScan > STATICS.robot.scanDelay * 0.5) {
               this.lookForPlayer();
             }
-            if (this.target && this.position.dist(this.target) < this.attackRange) {
-              if (!this.lastSeen && Date.now() - this.lastAlerted > STATICS.robot.alertTime) {
-                this.state = Robot.STATES.ROAMING;
-              }
-            } else {
-              if (Date.now() - this.lastAlerted > STATICS.robot.alertTime) {
-                this.state = Robot.STATES.ROAMING;
-              }
+            if (Date.now() - this.lastAlerted > STATICS.robot.alertTime) {
+              this.state = Robot.STATES.ROAMING;
+              this.target = null;
             }
           }
         }
+        this.doMovement();
         break;
     }
 

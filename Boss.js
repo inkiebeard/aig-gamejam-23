@@ -101,6 +101,7 @@ class Boss {
     if (!this.lastAttack || Date.now() - this.lastAttack > this.attackSpeed) {
       this.lastAttack = Date.now();
       this.GS.gameObjects.push(new Thrower(this.position.copy(), this.angle, true));
+      this.GS.playSound("woosh1");
     }
     return true;
   }
