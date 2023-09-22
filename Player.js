@@ -86,12 +86,18 @@ class Player extends AutoAgent {
       this.health = Math.min(this.health, this.maxHealth);
     }
   }
+
   attack(angle = this.angle) {
     if (this.dead) return;
-    if (!this.inventory.throwable || this.inventory.throwable.quantity <= 0) return;
-    this.inventory.throwable.quantity--;
+    if ((!this.inventory.throwable || this.inventory.throwable.quantity <= 0) && !this.GS.isBossLevel) return;
+    if (!this.GS.isBossLevel) {
+      this.inventory.throwable.quantity--;
+    }
     this.GS.gameObjects.push(new Thrower(this.position.copy(), angle));
     this.playSound('woosh1')
+    if (this.angle == angle) {
+      this.angle = angle
+    }
   }
 
   render() {

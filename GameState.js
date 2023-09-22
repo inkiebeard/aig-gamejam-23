@@ -55,6 +55,7 @@ const STATICS = {
     attackRate: 800,
     maxDamage: 3,
     alertTime: 3800,
+    bossFastestAttackSpeed: 100, // tenth of a second
   },
 };
 
@@ -156,7 +157,15 @@ class GameState {
   }
 
   get exitOpen() {
-    return this.player && this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.min(3, this.level);
+    if (!this.isBossLevel) {
+      return this.player && this.player.inventory.gem && this.player.inventory.gem.quantity >= Math.min(3, this.level);
+    } else {
+      return this.entities.every(ent => ent.dead)
+    }
+  }
+
+  get isBossLevel() {
+    return this.level % 5 === 0;
   }
 
   set currentState(state) {
@@ -214,7 +223,7 @@ class GameState {
   removeGameObject(gameObject) {
     if (gameObject instanceof Notify) {
       this.notifies = this.notifies.filter((v) => v !== gameObject);
-    } else if (gameObject instanceof AutoAgent) {
+    } else if (gameObject instanceof AutoAgent || gameObject instanceof Boss) {
       this.entities = this.entities.filter((v) => v !== gameObject);
     } else {
       this.gameObjects = this.gameObjects.filter((v) => v !== gameObject);
@@ -342,24 +351,30 @@ class GameState {
   }
 
   tick() {
-    for (const gameObject of this.gameObjects) {
-      gameObject.update();
-    }
-    for (const entity of this.entities) {
-      entity.update();
-    }
-    for (const notify of this.notifies) {
-      notify.update();
-    }
-    this.player.update();
-    // do physics collisions
-    [...this.entities, ...this.gameObjects, this.player].forEach((v) => {
-      [...this.entities, ...this.gameObjects, this.player].forEach((v2) => {
-        if (v !== v2 && v.collisions && v2.collisions && this.checkOverlap(v, v2)) {
-          v.collide(v2);
-        }
+    if (!this.isBossLevel) {
+      for (const gameObject of this.gameObjects) {
+        gameObject.update();
+      }
+      for (const entity of this.entities) {
+        entity.update();
+      }
+      for (const notify of this.notifies) {
+        notify.update();
+      }
+      this.player.update();
+      // do physics collisions
+      [...this.entities, ...this.gameObjects, this.player].forEach((v) => {
+        [...this.entities, ...this.gameObjects, this.player].forEach((v2) => {
+          if (v !== v2 && v.collisions && v2.collisions && this.checkOverlap(v, v2)) {
+            v.collide(v2);
+          }
+        });
       });
-    });
+    } else {
+      this.gameObjects.map(obj => obj.update())
+      this.player.update()
+      this.entities.map(ent => ent.update())
+    }
 
     // check for win condition
     if (this.exitOpen && this.exitPos && this.player.position.dist(this.exitPos) <= this.player.size + 10) {
@@ -368,11 +383,12 @@ class GameState {
       this.stopTicks();
     } else if (this.exitOpen && !this.exitPos) {
       this.exitPos = createVector(
-        this.player.position.x >= STATICS.halfWidth ? random(10, 30) : random(STATICS.width - 40, STATICS.width - 20),
-        this.player.position.y >= STATICS.halfHeight ? random(10, 30) : random(STATICS.height - 40, STATICS.height - 20)
+        this.player.position.x >= STATICS.halfWidth ? 32 : STATICS.width - 32,
+        this.player.position.y >= STATICS.halfHeight ? 32 : STATICS.height - 32
       );
       this.addNotify("🙌 Exit Open 🙌", createVector(STATICS.halfWidth, STATICS.halfHeight), "phaserUp1", 1500, 48, 0);
     }
+
     //check for player death
     if (this.player.dead) {
       this.currentState = STATES.GAME_OVER;
@@ -416,6 +432,10 @@ class GameState {
   }
 
   async setup(autoplay = false) {
+    if (this.isBossLevel) {
+      this.setupBossLevel(autoplay);
+      return
+    }
     this.views.loading.classList.remove("hidden");
     this.currentState = STATES.GAME_START;
     this.views.gameover.classList.add("hidden");
@@ -538,7 +558,7 @@ class GameState {
       }
       for (const entity of this.entities) {
         if (checkVectorsInDist(mousePos, entity.position, entity.size)) {
-          if (this.player.position.dist(entity.position) <= this.player.size + entity.size / 2 + 2 && entity.dead) {
+          if (this.player.position.dist(entity.position) <= this.player.size + entity.size / 2 + 2 && entity.dead && !(entity instanceof Boss)) {
             this.player.useObject(entity);
             return;
           } else if (!entity.dead) {
@@ -561,5 +581,29 @@ class GameState {
         }
       }
     }
+  }
+
+  setupBossLevel(autoplay = false) {
+    this.views.loading.classList.remove("hidden");
+    this.currentState = STATES.GAME_START;
+    this.views.gameover.classList.add("hidden");
+    // setup game
+    this.startTime = null;
+    this.endTime = null;
+    this.entities = [];
+    this.gameObjects = [];
+    this.notifies = [];
+    this.exitPos = null;
+    this.player = new Player({ x: randomRange(0, STATICS.width * 0.3), y: randomRange(0, STATICS.height) });
+    // setup the boss
+    const size = randomRange(250, 500);
+    const hp = map(this.level + size, 250, 60000, 100, 8000);
+    const boss = new Boss({ x: STATICS.width , y: STATICS.halfHeight - size / 2 }, size, hp);
+    this.entities.push(boss);
+    this.player.addInventory({ name: "health", quantity: Math.ceil(this.level + size * 0.5) });
+    delete this.player.inventory.gem
+    delete this.player.inventory.throwable
+
+    this.currentState = autoplay ? STATES.PLAYING : STATES.READY;
   }
 }
