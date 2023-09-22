@@ -377,7 +377,7 @@ class GameState {
     }
 
     // check for win condition
-    if (this.exitOpen && this.exitPos && this.player.position.dist(this.exitPos) <= this.player.size + 10) {
+    if (this.exitOpen && this.exitPos && this.player.position.dist(this.exitPos) <= this.player.size + 16) {
       this.currentState = STATES.LEVEL_WON;
       this.playSound("phaserUp1");
       this.stopTicks();
@@ -537,6 +537,7 @@ class GameState {
       push();
       fill(0, 255, 0, 20);
       noStroke();
+      imageMode(CENTER);
       image(images.exit, this.exitPos.x, this.exitPos.y, 32);
       pop();
     }

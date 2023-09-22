@@ -33,11 +33,13 @@ function setup() {
   createCanvas(STATICS.width, STATICS.height);
   canvasEl = document.querySelector("main > canvas");
   fixStylePositioning();
+  images.warehouse.resize(STATICS.width, STATICS.height);
   canvasReady = true;
 }
 
 function draw() {
   background(images.warehouse);
+  imageMode(CENTER);
   gameState.fixedUpdate();
 }
 
