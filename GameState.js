@@ -367,7 +367,10 @@ class GameState {
       this.playSound("phaserUp1");
       this.stopTicks();
     } else if (this.exitOpen && !this.exitPos) {
-      this.exitPos = createVector(this.player.position.x >= STATICS.halfWidth ? random(10, 30) : random(STATICS.width-40, STATICS.width-20), this.player.position.y >= STATICS.halfHeight ? random(10, 30) : random(STATICS.height-40, STATICS.height-20));
+      this.exitPos = createVector(
+        this.player.position.x >= STATICS.halfWidth ? random(10, 30) : random(STATICS.width - 40, STATICS.width - 20),
+        this.player.position.y >= STATICS.halfHeight ? random(10, 30) : random(STATICS.height - 40, STATICS.height - 20)
+      );
       this.addNotify("🙌 Exit Open 🙌", createVector(STATICS.halfWidth, STATICS.halfHeight), "phaserUp1", 1500, 48, 0);
     }
     //check for player death
@@ -473,7 +476,7 @@ class GameState {
       } else {
         let size = randomRange(20, 50);
         const crate = new Crate(position, size);
-        crate.hasGem = random() > 0.2;
+        crate.hasGem = Math.random() > 0.2;
         this.gameObjects.push(crate);
       }
     };
@@ -521,6 +524,7 @@ class GameState {
 
   mousePressed(x, y) {
     if (this.views.menu.classList.contains("hidden")) {
+      let target = null;
       const mousePos = createVector(x, y);
       for (const gameObject of this.gameObjects) {
         if (checkVectorsInDist(mousePos, gameObject.position, gameObject.size)) {
@@ -528,7 +532,7 @@ class GameState {
             this.player.useObject(gameObject);
             return;
           } else {
-            this.player.target = gameObject.position.copy();
+            target = gameObject.position.copy();
           }
         }
       }
@@ -537,16 +541,24 @@ class GameState {
           if (this.player.position.dist(entity.position) <= this.player.size + entity.size / 2 + 2 && entity.dead) {
             this.player.useObject(entity);
             return;
-          } else {
+          } else if (!entity.dead) {
             this.player.attack(entity.position.copy().sub(this.player.position).heading());
             return;
+          } else {
+            target = entity.position.copy();
           }
         }
       }
-      this.player.target = mousePos;
+      this.player.target = target || mousePos;
       const direction = mousePos.copy().sub(this.player.position);
+      let contrary = 0;
       for (const entity of this.entities) {
-        entity.target = random() > 0.3 ? entity.position.copy().sub(direction) : entity.position.copy().add(direction);
+        if (random() > 0.3 && this.entities.length > 3 && contrary < this.entities.length * 0.3) {
+          entity.target = entity.position.copy().sub(direction);
+          contrary++;
+        } else {
+          entity.target = entity.position.copy().add(direction);
+        }
       }
     }
   }

@@ -1,6 +1,6 @@
 class Notify {
   constructor(position, text, sound = null, lifeTime = 1500, size = 16, color = 0) {
-    this.position = position;
+    this.position = position.dist === undefined ? position : position.copy();
     this.text = text;
     this.deathNote = Date.now() + lifeTime;
     this.size = size;

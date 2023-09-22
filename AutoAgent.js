@@ -55,6 +55,7 @@ class AutoAgent {
     this.health -= damage;
     if (this.health <= 0) {
       this.playSound("robotDeath");
+      this.collisions = false;
       this.timeOfDeath = Date.now();
     }
     return this.dead;
@@ -160,38 +161,32 @@ class AutoAgent {
   }
 
   lookAt(vector) {
-    this.angle = p5.Vector.sub(vector, this.position).heading();
+    this.steer(p5.Vector.sub(this.position, vector).normalize());
   }
 
   collide(obj) {
     this.position = this.lastPos;
-    if (this.GS.checkOverlap(this, obj)) {
-      this.position = this.position.copy().sub(this.vel.copy().mult(2));
+    if (this.GS.checkOverlap(this, obj) && obj.vel && obj.vel.mag() > 0) {
+      this.steer(obj.vel)
     }
-    if (!(obj instanceof Crate)) return
+    if ((obj instanceof Crate) && this.vel) {
+      const existingVel = this.vel.copy()
+      this.vel.set(0, 0);
+      this.steer(existingVel ? existingVel.mult(-0.1) : p5.Vector.fromAngle(this.angle).normalize().mult(-1));
+    }
     const avgPostMovement = this.lastPositions.map((pos, i) => (i > 0 ? pos.dist(this.lastPositions[i - 1]) : 0)).reduce((a, b) => a + b, 0) / this.lastPositions.length;
-    if (this.target && avgPostMovement < 0.1) {
+    if (avgPostMovement < 0.1) {
       if (this.target && this.target.dist(this.position) < 50) {
         this.target = null;
-      } else if(this.target) {
-        // shift position slightly
-        if (this.position.x < this.target.x) {
-          this.position.add(createVector(-2, 0));
-          if (this.position.y > this.target.y) {
-            this.position.add(createVector(0, 2));
-          }
+      } else if (this.target) {
+        const targetAngle = p5.Vector.sub(this.target, this.position).heading();
+        const angleDiff = Math.abs(targetAngle - this.angle);
+        if (angleDiff > 0.1) {
+          this.position.add(p5.Vector.fromAngle(angleDiff).normalize().mult(2));
         } else {
-          this.position.add(createVector(2, 0));
-          if (this.position.y < this.target.y) {
-            this.position.add(createVector(0, -2));
-          }
+          this.position.sub(p5.Vector.fromAngle(angleDiff).normalize().mult(2));
         }
-      } else {
-        // shift position slightly to the right
-        this.position.add(createVector(3, 0));
       }
-    } else if (avgPostMovement < 0.1) {
-      this.position.add(createVector(3, 0));
     }
   }
 }

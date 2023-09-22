@@ -21,7 +21,9 @@ class Player extends AutoAgent {
     this.maxHealth = STATICS.player.HP;
     this.angle = 0
     this.speed = STATICS.player.speed;
+    this.lastDrops = [];
   }
+
 
   addInventory(item) {
     if (this.inventory[item.name]) {
@@ -46,8 +48,15 @@ class Player extends AutoAgent {
         this.GS.addNotify("💎", this.position.copy(),'pickup', 1500, 32, 0);
         return true
       } else if (!gObj.searched) {
-        const type = random() > 0.2 ? "health" : "throwable"
+        let type = random() > 0.2 ? "health" : "throwable"
+        if (this.lastDrops.slice(-3).every((v) => v === type)) {
+          type = type === "health" ? "throwable" : "health"
+        }
         this.addInventory({ name: type, quantity: 1 });
+        this.lastDrops.push(type)
+        if (this.lastDrops.length > 3) {
+          this.lastDrops.shift()
+        }
         gObj.searched = true;
         this.GS.addNotify(InventoryIconMap[type], this.position.copy(),'gem', 1500, 20, 0);
         return true

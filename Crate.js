@@ -41,7 +41,7 @@ class Crate {
   }
 
   collide(obj) {
-    // not implemented
+    // I don't move
   }
 
   render() {
