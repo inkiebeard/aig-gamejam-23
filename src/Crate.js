@@ -48,7 +48,7 @@ class Crate {
     if (this.dead) return;
     push();
     if (images.crate) {
-      imageMode(CENTER);
+      
       image(this.searched ? images.crateOpen : images.crate, this.position.x, this.position.y, this.size, this.size);
     } else {
       fill(this.color);

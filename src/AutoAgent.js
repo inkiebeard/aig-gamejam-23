@@ -168,7 +168,7 @@ class AutoAgent {
   collide(obj) {
     this.position = this.lastPos;
     if (this.GS.checkOverlap(this, obj) && obj.vel && obj.vel.mag() > 0) {
-      this.steer(obj.vel);
+      this.steer(obj.vel.normalize());
     }
     if (obj instanceof Crate && this.vel) {
       const existingVel = this.vel.copy();

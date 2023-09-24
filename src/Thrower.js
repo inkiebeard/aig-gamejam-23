@@ -56,7 +56,7 @@ class Thrower {
 
   render() {
     push();
-    imageMode(CENTER);
+    
     translate(this.position.x, this.position.y);
     rotate(this.displayAngle)
     image(!this.isBoss ? images.knife : images.crate, 0, 0, 32, 32);

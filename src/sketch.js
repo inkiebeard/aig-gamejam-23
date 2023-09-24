@@ -38,7 +38,8 @@ function setup() {
 }
 
 function draw() {
-  background(images.warehouse);
+  imageMode(CORNER);
+  background(images.warehouse)
   imageMode(CENTER);
   gameState.fixedUpdate();
 }
@@ -46,6 +47,7 @@ function draw() {
 function windowResized() {
   resizeCanvas(STATICS.width, STATICS.height);
   fixStylePositioning();
+  images.warehouse.resize(STATICS.width, STATICS.height);
 }
 
 function fixStylePositioning() {

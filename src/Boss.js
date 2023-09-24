@@ -57,7 +57,7 @@ class Boss {
     push();
     translate(this.position.x, this.position.y);
     rotate(this.angle);
-    imageMode(CENTER);
+    
     image(images.robot, 0, 0, this.size, this.size);
     pop();
     // giant healthbar across the bottom of the screen

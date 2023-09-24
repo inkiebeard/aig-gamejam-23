@@ -537,7 +537,7 @@ class GameState {
       push();
       fill(0, 255, 0, 20);
       noStroke();
-      imageMode(CENTER);
+      
       image(images.exit, this.exitPos.x, this.exitPos.y, 32);
       pop();
     }

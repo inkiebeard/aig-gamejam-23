@@ -108,7 +108,7 @@ class Player extends AutoAgent {
     if (images.player && this.angle !== undefined) {
       translate(this.position.x, this.position.y);
       rotate(this.angle);
-      imageMode(CENTER);
+      
       image(images.player, 0, 0, this.size, this.size);
     } else {
       circle(this.position.x, this.position.y, 10);

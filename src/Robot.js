@@ -86,7 +86,7 @@ class Robot extends AutoAgent {
     if (images.robot && this.angle !== undefined) {
       translate(this.position.x, this.position.y);
       rotate(this.angle);
-      imageMode(CENTER);
+      
       image(images.robot, 0, 0, this.size, this.size);
     } else {
       fill(0, 0, 255);
