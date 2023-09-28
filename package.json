@@ -1,11 +1,14 @@
 {
   "name": "aigjam23",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "description": "copycat game jam AI and Games 2023 Entry",
   "main": "index.html",
   "scripts": {
     "test": "node -e \"console.log(\"not yet implemented (let's be real won't implement for game jam\");",
-    "start": "electron ."
+    "start": "electron-forge start",
+    "prep:electron": "cp -r src/* electron",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "keywords": [
     "game",
@@ -21,7 +24,16 @@
   "author": "Aaron Toomey <aaron@inkiebeard.codes>",
   "license": "MIT",
   "devDependencies": {
+    "@electron-forge/cli": "^6.4.2",
+    "@electron-forge/maker-deb": "^6.4.2",
+    "@electron-forge/maker-rpm": "^6.4.2",
+    "@electron-forge/maker-squirrel": "^6.4.2",
+    "@electron-forge/maker-zip": "^6.4.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
     "electron": "^26.2.1",
     "esbuild": "^0.19.3"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.0"
   }
 }
