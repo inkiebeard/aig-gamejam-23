@@ -69,11 +69,6 @@ const keyControllers = {
   },
   Escape: () => {
     GameState.instance.toggleMenu();
-    if (GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.currentState === STATES.PAUSED) {
-      GameState.instance.currentState = STATES.PLAYING;
-    } else if (!GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.currentState === STATES.PLAYING) {
-      GameState.instance.currentState = STATES.PAUSED;
-    }
   },
   Enter: () => !GameState.instance.views.menu.classList.contains("hidden") && GameState.instance.mainPressed(),
   ArrowUp: () => {
@@ -105,6 +100,10 @@ const keyControllers = {
   },
 };
 
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 class GameState {
   /**
    * GameState holds all the data for the game and controls updates for all objects
@@ -123,6 +122,7 @@ class GameState {
       reset: document.getElementById("resetAction"),
       music: document.getElementById("musicAction"),
       howto: document.getElementById("howtoAction"),
+      mobileNav: document.getElementById("mobileNav"),
     };
     this.views = {
       menu: document.getElementById("menu"),
@@ -313,6 +313,15 @@ class GameState {
         sounds.music.stop();
       }
     });
+    this.buttons.mobileNav.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleMenu();
+    });
+
+    if (isMobileDevice()) {
+      this.buttons.mobileNav.style.display = "inline-block";
+    }
 
     setTimeout(() => this.setup(), 200);
   }
@@ -508,6 +517,11 @@ class GameState {
       this.showMenu();
     } else if (!this.views.menu.classList.contains("hidden") && ![STATES.READY, STATES.GAME_OVER, STATES.GAME_START].includes(this.currentState)) {
       this.hideMenu();
+    }
+    if (this.views.menu.classList.contains("hidden") && this.currentState === STATES.PAUSED) {
+      this.currentState = STATES.PLAYING;
+    } else if (!this.views.menu.classList.contains("hidden") && this.currentState === STATES.PLAYING) {
+      this.currentState = STATES.PAUSED;
     }
     this.playSound("pop");
   }
